@@ -94,6 +94,12 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
     }
   }
 
+  // Ocultar adicionales solo-automáticos cuando no aplican
+  $claves_solo_auto = ['entrega_fuera_hora', 'entrega_aeropuerto'];
+  $adicionales = array_values(array_filter($adicionales, fn($a) =>
+    !in_array($a['clave'] ?? '', $claves_solo_auto, true) || !empty($autoQtys[$a['id']])
+  ));
+
   $fecha_retiro = date_format(date_create($res['fecha_retiro']),    'd/m/Y') . ' ' . substr($res['hora_retiro'],    0, 5);
   $fecha_devol  = date_format(date_create($res['fecha_devolucion']), 'd/m/Y') . ' ' . substr($res['hora_devolucion'], 0, 5);
 ?>
