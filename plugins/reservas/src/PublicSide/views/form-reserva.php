@@ -19,10 +19,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
   }
 }
 ?>
-<section class="px-4 py-6 mx-auto">
+<section style="padding:0 6px 24px;">
   <form action="<?php echo esc_url($action); ?>" method="get" class="reserva-inline-form" style="display:flex !important;align-items:center !important;gap:12px !important;">
 
-    <div class="px-6 py-6 bg-white rounded-lg md:px-8 reserva-search-card" style="flex:1 1 auto !important;min-width:0 !important;">
+    <div class="bg-white rounded-lg md:px-8 reserva-search-card" style="flex:1 1 auto !important;min-width:0 !important;padding:20px 16px;">
       <div class="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6">
         <div class="reserva-search-field md:col-span-1">
           <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de entrega</label>
