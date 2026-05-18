@@ -20,7 +20,13 @@ if (!function_exists('aba_reserva_render_time_options')) {
 }
 ?>
 <style>
+.aba-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
 @media (max-width: 767px) {
+  .aba-fields-grid { grid-template-columns: 1fr !important; }
   .aba-form-inner { flex-direction: column !important; }
   .aba-form-btn   { width: 100% !important; }
   .aba-form-btn button { width: 100% !important; }
@@ -34,15 +40,15 @@ if (!function_exists('aba_reserva_render_time_options')) {
       <div class="aba-form-inner" style="display:flex;flex-direction:row;align-items:stretch;gap:8px;">
 
         <div style="flex:1;min-width:0;">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-4">
-            <div class="reserva-search-field md:col-span-1">
+          <div class="aba-fields-grid">
+            <div class="reserva-search-field">
               <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de recogida / devolución</label>
               <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
                 <option value="bariloche" selected>Bariloche Aeropuerto</option>
               </select>
             </div>
 
-            <div class="reserva-search-field md:col-span-1">
+            <div class="reserva-search-field">
               <label class="block mb-2 font-bold text-[#1A202C]!" for="reserva_rango">Fecha de recogida / devolución</label>
               <input type="text" class="w-full! py-2! px-0! h-10! shadow-none! placeholder:text-[#90A3BF]! text-sm!" id="reserva_rango"
                 placeholder="Seleccionar rango" autocomplete="off" />
@@ -50,14 +56,14 @@ if (!function_exists('aba_reserva_render_time_options')) {
               <input type="hidden" id="dropoff_fecha" name="dropoff_fecha" value="" />
             </div>
 
-            <div class="reserva-search-field md:col-span-1">
+            <div class="reserva-search-field">
               <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_horario">Hora de entrega</label>
               <select id="pickup_horario" name="pickup_horario" class="" placeholder="Hora de entrega">
                 <?php echo aba_reserva_render_time_options('12:00'); ?>
               </select>
             </div>
 
-            <div class="reserva-search-field md:col-span-1">
+            <div class="reserva-search-field">
               <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_horario">Hora de devolución</label>
               <select id="dropoff_horario" name="dropoff_horario" class="" placeholder="Hora de devolución">
                 <?php echo aba_reserva_render_time_options('12:00'); ?>
