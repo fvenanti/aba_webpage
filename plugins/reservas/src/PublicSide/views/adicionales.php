@@ -148,16 +148,22 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
             <p style="font-size:12px;color:#596780;margin:0;line-height:1.5;"><?php echo esc_html($ad['descripcion']); ?></p>
             <?php endif; ?>
           </div>
+          <?php $init_qty = $autoQtys[$ad['id']] ?? 0; $is_auto = $init_qty > 0; ?>
           <div style="text-align:right;flex-shrink:0;margin-right:14px;">
             <p style="font-size:14px;font-weight:700;color:#1A202C;margin:0;"><?php echo $fmt_precio($ad['precio']); ?></p>
-            <p style="font-size:11px;color:#90A3BF;font-weight:600;margin:0;"><?php echo $modo_label($ad['modo']); ?></p>
+            <p style="font-size:11px;color:<?php echo $is_auto ? '#679938' : '#90A3BF'; ?>;font-weight:600;margin:0;"><?php echo $is_auto ? 'Automático' : $modo_label($ad['modo']); ?></p>
           </div>
-          <?php $init_qty = $autoQtys[$ad['id']] ?? 0; ?>
+          <?php if ($is_auto): ?>
+          <div style="display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:32px;background:#f0f7e8;border-radius:8px;border:1.5px solid #679938;font-size:13px;font-weight:700;color:#679938;padding:0 10px;">
+            ×<?php echo $init_qty; ?>
+          </div>
+          <?php else: ?>
           <div class="aba-counter">
-            <button type="button" class="aba-dec" data-id="<?php echo esc_attr($ad['id']); ?>"<?php if ($init_qty === 0): ?> disabled<?php endif; ?>>−</button>
-            <span class="aba-counter-val" id="qty-<?php echo esc_attr($ad['id']); ?>"><?php echo $init_qty; ?></span>
+            <button type="button" class="aba-dec" data-id="<?php echo esc_attr($ad['id']); ?>" disabled>−</button>
+            <span class="aba-counter-val" id="qty-<?php echo esc_attr($ad['id']); ?>">0</span>
             <button type="button" class="aba-inc" data-id="<?php echo esc_attr($ad['id']); ?>">+</button>
           </div>
+          <?php endif; ?>
         </div>
         <?php endforeach; ?>
       </div>
