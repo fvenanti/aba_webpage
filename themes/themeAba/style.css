@@ -630,6 +630,9 @@ header .redes a .fa {
 .article .newBox {
 	padding: 20px 0;
 }
+.article .newBox p {
+	text-align: justify;
+}
 .article .catCar {
 	font-weight: 300;
 	color: #32bba9;
