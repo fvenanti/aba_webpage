@@ -1778,7 +1778,7 @@ header .lang a.qtranxs_text_pt::after { content: "Por"; font-size: 12px; }
     letter-spacing: 0.03em !important;
 }
 #highligth {
-    min-height: calc(100vh - 115px) !important;
+    min-height: calc(100vh - 50px) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-end !important;
