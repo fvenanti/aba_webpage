@@ -523,7 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // primera pasada
   applyFilters({ cards, sliderEl, emptyEl });
 
-  // Abrir: delegación para que funcione aunque filtres/ocultes
+  // "Reservar ahora" → ir directo a la página de adicionales
   document.addEventListener("click", (e) => {
     const btn = e.target.closest(".aba-open-modal");
     if (!btn) return;
@@ -531,7 +531,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const card = btn.closest("article");
     if (!card) return;
 
-    openModalFromCard(card);
+    const sucursalMap = { bariloche: "Bariloche", neuquen: "Neuquen", calafate: "Calafate" };
+    const rawSuc = (getVal("pickup_ubicacion") || "").toLowerCase();
+    const sucursal = sucursalMap[rawSuc] || rawSuc;
+
+    const base = window.abaReservas?.adicionalesUrl || "/adicionales/";
+    const url = new URL(base, window.location.origin);
+    url.searchParams.set("id_autos",    card.dataset.idautos || "");
+    url.searchParams.set("inicio",      getVal("pickup_fecha"));
+    url.searchParams.set("fin",         getVal("dropoff_fecha"));
+    url.searchParams.set("hora_inicio", (getVal("pickup_horario")  || "12:00").split(":")[0]);
+    url.searchParams.set("hora_fin",    (getVal("dropoff_horario") || "12:00").split(":")[0]);
+    url.searchParams.set("sucursal",    sucursal);
+
+    window.location.href = url.toString();
   });
 
   // Click "Seleccionar adicionales" → navegar a la página de adicionales
