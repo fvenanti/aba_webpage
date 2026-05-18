@@ -401,12 +401,13 @@ class PublicSide
    */
   public function shortcode_cotizacion(): string
   {
-    $id_autos    = intval($_GET['id_autos']     ?? 0);
-    $inicio      = sanitize_text_field($_GET['inicio']       ?? '');
-    $fin         = sanitize_text_field($_GET['fin']          ?? '');
-    $hora_inicio = intval($_GET['hora_inicio']  ?? 9);
-    $hora_fin    = intval($_GET['hora_fin']      ?? 9);
-    $sucursal    = sanitize_text_field($_GET['sucursal']     ?? 'Bariloche');
+    $id_autos      = intval($_GET['id_autos']     ?? 0);
+    $inicio        = sanitize_text_field($_GET['inicio']       ?? '');
+    $fin           = sanitize_text_field($_GET['fin']          ?? '');
+    $hora_inicio   = intval($_GET['hora_inicio']  ?? 9);
+    $hora_fin      = intval($_GET['hora_fin']      ?? 9);
+    $sucursal      = sanitize_text_field($_GET['sucursal']     ?? 'Bariloche');
+    $ubicacion_raw = strtolower(sanitize_text_field($_GET['ubicacion'] ?? ''));
 
     if (!$id_autos || !$inicio || !$fin) {
       return $this->render_view('adicionales.php', [
@@ -421,7 +422,7 @@ class PublicSide
     return $this->render_view('adicionales.php', [
       'cotizacion' => $result['data'] ?? null,
       'error_code' => $result['error'] ?? null,
-      'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal'),
+      'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal', 'ubicacion_raw'),
     ]);
   }
 

@@ -68,6 +68,32 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
   $adicionales = $cotizacion['adicionales'] ?? [];
   $dias  = intval($res['dias_cobrables']);
 
+  // Filtrar adicionales ocultos
+  $claves_ocultas = ['fueraderadio_km', 'dropoff_km'];
+  $adicionales = array_values(array_filter($adicionales, fn($a) => !in_array($a['clave'] ?? '', $claves_ocultas, true)));
+
+  // Renombrar
+  foreach ($adicionales as &$ad) {
+    if (($ad['clave'] ?? '') === 'entrega_fuera_hora') $ad['nombre'] = 'Entrega fuera de hora';
+  }
+  unset($ad);
+
+  // Cantidades automáticas
+  $hora_ini_int  = intval($params['hora_inicio'] ?? 9);
+  $hora_fin_int  = intval($params['hora_fin']    ?? 9);
+  $ubicacion_raw = strtolower($params['ubicacion_raw'] ?? '');
+  $autoQtys = [];
+  foreach ($adicionales as $ad) {
+    if (($ad['clave'] ?? '') === 'entrega_fuera_hora') {
+      $qty = ($hora_ini_int < 8 || $hora_ini_int >= 20 ? 1 : 0)
+           + ($hora_fin_int  < 8 || $hora_fin_int  >= 20 ? 1 : 0);
+      if ($qty > 0) $autoQtys[$ad['id']] = $qty;
+    }
+    if (($ad['clave'] ?? '') === 'entrega_aeropuerto' && $ubicacion_raw === 'bariloche') {
+      $autoQtys[$ad['id']] = 1;
+    }
+  }
+
   $fecha_retiro = date_format(date_create($res['fecha_retiro']),    'd/m/Y') . ' ' . substr($res['hora_retiro'],    0, 5);
   $fecha_devol  = date_format(date_create($res['fecha_devolucion']), 'd/m/Y') . ' ' . substr($res['hora_devolucion'], 0, 5);
 ?>
@@ -126,9 +152,10 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
             <p style="font-size:14px;font-weight:700;color:#1A202C;margin:0;"><?php echo $fmt_precio($ad['precio']); ?></p>
             <p style="font-size:11px;color:#90A3BF;font-weight:600;margin:0;"><?php echo $modo_label($ad['modo']); ?></p>
           </div>
+          <?php $init_qty = $autoQtys[$ad['id']] ?? 0; ?>
           <div class="aba-counter">
-            <button type="button" class="aba-dec" data-id="<?php echo esc_attr($ad['id']); ?>" disabled>−</button>
-            <span class="aba-counter-val" id="qty-<?php echo esc_attr($ad['id']); ?>">0</span>
+            <button type="button" class="aba-dec" data-id="<?php echo esc_attr($ad['id']); ?>"<?php if ($init_qty === 0): ?> disabled<?php endif; ?>>−</button>
+            <span class="aba-counter-val" id="qty-<?php echo esc_attr($ad['id']); ?>"><?php echo $init_qty; ?></span>
             <button type="button" class="aba-inc" data-id="<?php echo esc_attr($ad['id']); ?>">+</button>
           </div>
         </div>
@@ -223,6 +250,7 @@ window.abaCotizacion = <?php echo wp_json_encode([
   'sena_pct'    => isset($tar['sena_pct']) ? intval($tar['sena_pct']) : null,
   'coberturas'  => $coberturas,
   'adicionales' => $adicionales,
+  'autoQtys'    => $autoQtys,
   'vehiculo'    => $v,
   'reserva'     => $res,
   'waNumber'    => $WA_NUMBER,

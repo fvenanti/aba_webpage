@@ -274,6 +274,17 @@ function initAdicionalesPage(data) {
     }
   }
 
+  // Inicializar cantidades automáticas
+  if (data.autoQtys) {
+    Object.entries(data.autoQtys).forEach(([idStr, qty]) => {
+      const id = parseInt(idStr, 10);
+      adQtys.set(id, qty);
+      const decBtn = document.querySelector(`.aba-dec[data-id="${id}"]`);
+      if (decBtn) decBtn.disabled = qty === 0;
+    });
+  }
+  updateBreakdown();
+
   // Coberturas: toggles
   document.querySelectorAll(".aba-cob-toggle").forEach((chk) => {
     chk.addEventListener("change", () => {
@@ -548,6 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
     url.searchParams.set("hora_inicio", (getVal("pickup_horario")  || "12:00").split(":")[0]);
     url.searchParams.set("hora_fin",    (getVal("dropoff_horario") || "12:00").split(":")[0]);
     url.searchParams.set("sucursal",    sucursal);
+    url.searchParams.set("ubicacion",   rawSuc);
 
     window.location.href = url.toString();
   });
