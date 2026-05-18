@@ -45,9 +45,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
   text-align: left !important;
 }
 .reserva-search-field .ss-main {
-  min-height: 20px !important;
-  height: 20px !important;
-  line-height: 20px !important;
+  min-height: unset !important;
+  height: auto !important;
+  line-height: 1.4 !important;
+  padding: 2px 0 !important;
   text-align: left !important;
   font-weight: 700 !important;
   font-size: 14px !important;
@@ -63,11 +64,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
   display: none !important;
 }
 .reserva-search-field input[type="text"] {
-  height: 20px !important;
-  min-height: 20px !important;
-  line-height: 20px !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+  height: auto !important;
+  min-height: unset !important;
+  line-height: 1.4 !important;
+  padding: 2px 0 !important;
   text-align: left !important;
   font-weight: 700 !important;
   font-size: 14px !important;
