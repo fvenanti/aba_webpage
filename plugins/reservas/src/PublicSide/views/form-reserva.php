@@ -24,9 +24,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
   .aba-form-inner { flex-direction: column !important; }
   .aba-form-btn   { width: 100% !important; }
   .aba-form-btn button { width: 100% !important; }
+  .reserva-search-card { margin-left: 16px !important; margin-right: 16px !important; }
 }
 </style>
-<section style="padding:0 16px 24px;">
+<section style="padding:0 0 24px;">
   <form action="<?php echo esc_url($action); ?>" method="get">
 
     <div class="bg-white rounded-lg reserva-search-card" style="padding:20px 16px 24px;">
