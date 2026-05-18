@@ -28,7 +28,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
 .reserva-search-field {
   border: 2px solid #679938 !important;
   border-radius: 8px !important;
-  padding: 3px 10px 5px !important;
+  padding: 3px 10px 3px !important;
   background: #fff !important;
 }
 .reserva-search-field label {
