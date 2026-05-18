@@ -40,6 +40,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
   margin-bottom: 0 !important;
   line-height: 1.2 !important;
   display: block !important;
+  text-align: left !important;
 }
 .reserva-search-field .ss-main {
   min-height: 24px !important;
