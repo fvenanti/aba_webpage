@@ -28,7 +28,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
 .reserva-search-field {
   border: 2px solid #679938 !important;
   border-radius: 8px !important;
-  padding: 5px 14px !important;
+  padding: 4px 12px !important;
   background: #fff !important;
 }
 .reserva-search-field label {
@@ -38,7 +38,20 @@ if (!function_exists('aba_reserva_render_time_options')) {
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
   margin-bottom: 0 !important;
+  line-height: 1.2 !important;
   display: block !important;
+}
+.reserva-search-field .ss-main {
+  min-height: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+}
+.reserva-search-field input[type="text"] {
+  height: 24px !important;
+  min-height: 24px !important;
+  line-height: 24px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 @media (max-width: 767px) {
   .aba-fields-grid { grid-template-columns: 1fr !important; }
