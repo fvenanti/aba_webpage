@@ -43,6 +43,7 @@ if (!empty($modelos)) {
       'passengers'   => isset($modelo['Pasajeros'])   ? intval($modelo['Pasajeros'])      : null,
       'bags'         => isset($modelo['Valijas'])     ? intval($modelo['Valijas'])        : null,
       'transmission' => isset($modelo['Transmision']) ? esc_html($modelo['Transmision']) : null,
+      'id_autos'     => intval($modelo['IdAutos']     ?? 0),
     ];
     $cats[esc_html($modelo['Categoría'])] = isset($cats[esc_html($modelo['Categoría'])]) ? $cats[esc_html($modelo['Categoría'])] + 1 : 1;
     $price = aba_parse_ars($modelo['Tarifa_Final']);
@@ -159,6 +160,7 @@ if (!empty($modelos)) {
             data-passengers="<?php echo esc_attr($car['passengers'] ?? ''); ?>"
             data-bags="<?php echo esc_attr($car['bags'] ?? ''); ?>"
             data-transmission="<?php echo esc_attr($car['transmission'] ?? ''); ?>"
+            data-idautos="<?php echo esc_attr($car['id_autos']); ?>"
             class="flex flex-col justify-between gap-5 p-6 bg-white rounded-lg">
             <div class="">
               <h3 class="text-xl! text-[#1A202C]! font-bold mb-1! mt-0! p-0!">
@@ -193,8 +195,7 @@ if (!empty($modelos)) {
                 Tarifa abonando en efectivo
               </p>
               <button id='toggleModal'
-                class='aba-open-modal btn font-semibold! rounded-sm! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0! w-full!'>Reservar
-                ahora</button>
+                class='aba-open-modal btn font-semibold! rounded-sm! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0! w-full!'>Reservar ahora</button>
             </div>
           </article>
         <?php endforeach; ?>
@@ -243,7 +244,7 @@ if (!empty($modelos)) {
           <div class="flex flex-col gap-3 pt-4">
             <a id="aba-modal-wa" href="#" target="_blank" rel="noopener"
               class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0! text-center!">
-              Reservar ahora
+              Seleccionar adicionales →
             </a>
           </div>
         </div>

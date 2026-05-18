@@ -13,6 +13,7 @@ class PublicSide
   {
     add_shortcode('aba_reserva_form', [$this, 'shortcode_form_reserva']);
     add_shortcode('aba_reserva_resultados', [$this, 'shortcode_resultados_reserva']);
+    add_shortcode('aba_cotizacion', [$this, 'shortcode_cotizacion']);
 
     add_action('init', [$this, 'register_cpt']);
 
@@ -33,12 +34,16 @@ class PublicSide
       ]
     );
 
+    $adicionales_page = get_page_by_path('adicionales');
     wp_localize_script(
       'main',
       'abaReservas',
       [
-        'ajaxUrl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('aba_reservas'),
+        'ajaxUrl'       => admin_url('admin-ajax.php'),
+        'nonce'         => wp_create_nonce('aba_reservas'),
+        'adicionalesUrl' => $adicionales_page
+          ? get_permalink($adicionales_page->ID)
+          : home_url('/adicionales/'),
       ]
     );
   }
@@ -389,5 +394,71 @@ class PublicSide
       return (int) $m[1];
     }
     return 9;
+  }
+
+  /**
+   * Shortcode [aba_cotizacion]
+   */
+  public function shortcode_cotizacion(): string
+  {
+    $id_autos    = intval($_GET['id_autos']     ?? 0);
+    $inicio      = sanitize_text_field($_GET['inicio']       ?? '');
+    $fin         = sanitize_text_field($_GET['fin']          ?? '');
+    $hora_inicio = intval($_GET['hora_inicio']  ?? 9);
+    $hora_fin    = intval($_GET['hora_fin']      ?? 9);
+    $sucursal    = sanitize_text_field($_GET['sucursal']     ?? 'Bariloche');
+
+    if (!$id_autos || !$inicio || !$fin) {
+      return $this->render_view('adicionales.php', [
+        'cotizacion' => null,
+        'error_code' => 'params',
+        'params'     => [],
+      ]);
+    }
+
+    $result = $this->obtener_cotizacion($id_autos, $inicio, $fin, $hora_inicio, $hora_fin, $sucursal);
+
+    return $this->render_view('adicionales.php', [
+      'cotizacion' => $result['data'] ?? null,
+      'error_code' => $result['error'] ?? null,
+      'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal'),
+    ]);
+  }
+
+  private function obtener_cotizacion(int $id_autos, string $inicio, string $fin, int $hora_inicio, int $hora_fin, string $sucursal): array
+  {
+    $url = "https://aba.benvert.com.ar/api/cotizacion-detalle/{$id_autos}?" . http_build_query([
+      'inicio'          => $inicio,
+      'fin'             => $fin,
+      'hora_inicio'     => $hora_inicio,
+      'hora_fin'        => $hora_fin,
+      'sucursal_retiro' => $sucursal,
+    ]);
+
+    $response = wp_remote_get($url, [
+      'headers' => [
+        'X-API-Key' => get_option('aba_reservas_api_key', ''),
+        'Accept'    => 'application/json',
+      ],
+      'timeout' => 15,
+    ]);
+
+    if (is_wp_error($response)) {
+      error_log('[aba_cotizacion] ' . $response->get_error_message());
+      return ['error' => 'api_error'];
+    }
+
+    $code = wp_remote_retrieve_response_code($response);
+
+    if ($code === 409) {
+      return ['error' => 'sin_tarifa'];
+    }
+
+    if ($code !== 200) {
+      return ['error' => 'api_error'];
+    }
+
+    $body = json_decode(wp_remote_retrieve_body($response), true);
+    return is_array($body) ? ['data' => $body] : ['error' => 'api_error'];
   }
 }

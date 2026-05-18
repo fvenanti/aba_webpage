@@ -159,6 +159,7 @@ function openModalFromCard(card) {
   const passengers = card.dataset.passengers ?? "";
   const bags = card.dataset.bags ?? "";
   const transmission = card.dataset.transmission ?? "";
+  const idAutos = card.dataset.idautos || "";
 
   // Rellenar UI
   document.getElementById("aba-modal-subtitle").textContent = `Segmento ${cat}`;
@@ -185,41 +186,27 @@ function openModalFromCard(card) {
       badge("fa-cog",      txLabel);
   }
 
-  // Armar WhatsApp con datos del form + auto
-  const pickup_ubicacion = getVal("pickup_ubicacion");
-  const pickup_fecha = ymdToDmy(getVal("pickup_fecha"));
-  const pickup_horario = getVal("pickup_horario");
-  const dropoff_fecha = ymdToDmy(getVal("dropoff_fecha"));
-  const dropoff_horario = getVal("dropoff_horario");
+  // Armar URL de adicionales
+  const sucursalMap = { bariloche: "Bariloche", neuquen: "Neuquen", calafate: "Calafate" };
+  const rawSuc = (getVal("pickup_ubicacion") || "").toLowerCase();
+  const sucursal = sucursalMap[rawSuc] || rawSuc;
 
-  const text =
-    `Hola! Quiero reservar este vehículo:\n` +
-    `• Modelo: ${model}\n` +
-    `• Segmento: ${cat}\n` +
-    `• Tarifa: ${priceLabel}\n\n` +
-    `Datos de la reserva:\n` +
-    `• Pick-up: ${pickup_ubicacion} — ${pickup_fecha} ${pickup_horario}hs\n` +
-    `• Drop-off: ${dropoff_fecha} ${dropoff_horario}hs`;
+  const adicionalesBase = window.abaReservas?.adicionalesUrl || "/adicionales/";
+  const adUrl = new URL(adicionalesBase, window.location.origin);
+  adUrl.searchParams.set("id_autos",    idAutos);
+  adUrl.searchParams.set("inicio",      getVal("pickup_fecha"));
+  adUrl.searchParams.set("fin",         getVal("dropoff_fecha"));
+  adUrl.searchParams.set("hora_inicio", (getVal("pickup_horario")  || "12:00").split(":")[0]);
+  adUrl.searchParams.set("hora_fin",    (getVal("dropoff_horario") || "12:00").split(":")[0]);
+  adUrl.searchParams.set("sucursal",    sucursal);
 
-  const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
   const waBtn = document.getElementById("aba-modal-wa");
-  waBtn.setAttribute("href", waUrl);
-
-  // Guardar payload para crear consulta antes de ir a WhatsApp
-  waBtn.dataset.baseText = text;
-  waBtn.dataset.model = model;
-  waBtn.dataset.cat = cat;
-  waBtn.dataset.priceLabel = priceLabel;
-  waBtn.dataset.cashLabel = cashLabel;
-  waBtn.dataset.pickupUbicacion = pickup_ubicacion;
-  waBtn.dataset.pickupFecha = pickup_fecha;
-  waBtn.dataset.pickupHorario = pickup_horario;
-  waBtn.dataset.dropoffFecha = dropoff_fecha;
-  waBtn.dataset.dropoffHorario = dropoff_horario;
+  waBtn.setAttribute("href", adUrl.toString());
+  waBtn.removeAttribute("target");
 
   // Mostrar modal
   modal.classList.remove("hidden");
-  document.documentElement.classList.add("overflow-hidden"); // evita scroll del body
+  document.documentElement.classList.add("overflow-hidden");
 }
 
 function closeModal() {
@@ -229,7 +216,125 @@ function closeModal() {
   document.documentElement.classList.remove("overflow-hidden");
 }
 
+function initAdicionalesPage(data) {
+  const fmt = (n) => "$ " + Math.round(n).toLocaleString("es-AR");
+
+  const cobSelections = new Set();
+  const adQtys = new Map();
+
+  function calcExtras() {
+    let totalExtra = 0;
+    const rows = [];
+
+    data.coberturas.forEach((cob) => {
+      if (cobSelections.has(cob.clave)) {
+        const total = cob.precio * (cob.modo === "dia" ? data.dias : 1);
+        rows.push({ nombre: cob.nombre, total, modo: cob.modo, qty: null });
+        totalExtra += total;
+      }
+    });
+
+    data.adicionales.forEach((ad) => {
+      const qty = adQtys.get(ad.id) || 0;
+      if (qty > 0) {
+        const total = ad.precio * qty * (ad.modo === "dia" ? data.dias : 1);
+        rows.push({ nombre: ad.nombre, total, modo: ad.modo, qty });
+        totalExtra += total;
+      }
+    });
+
+    return { rows, totalExtra };
+  }
+
+  function updateBreakdown() {
+    const { rows, totalExtra } = calcExtras();
+
+    const extrasEl = document.getElementById("aba-extras-breakdown");
+    if (extrasEl) {
+      extrasEl.innerHTML = rows.map((r) => {
+        const label = r.qty !== null
+          ? `${r.nombre} ×${r.qty}${r.modo === "dia" ? ` (${data.dias} días)` : ""}`
+          : `${r.nombre}${r.modo === "dia" ? ` (${data.dias} días)` : ""}`;
+        return `<div class="aba-breakdown-row extra"><span>${label}</span><span>+ ${fmt(r.total)}</span></div>`;
+      }).join("");
+    }
+
+    const grandTarjeta = data.tarifa.total_tarjeta + totalExtra;
+    const grandEfectivo = data.tarifa.total_efectivo + totalExtra;
+
+    const elTarjeta = document.getElementById("aba-total-tarjeta");
+    if (elTarjeta) elTarjeta.textContent = fmt(grandTarjeta);
+
+    const elEfectivo = document.getElementById("aba-total-efectivo");
+    if (elEfectivo) elEfectivo.textContent = fmt(grandEfectivo);
+  }
+
+  // Coberturas: toggles
+  document.querySelectorAll(".aba-cob-toggle").forEach((chk) => {
+    chk.addEventListener("change", () => {
+      const clave = chk.value;
+      if (chk.checked) cobSelections.add(clave);
+      else cobSelections.delete(clave);
+      updateBreakdown();
+    });
+  });
+
+  // Adicionales: counters
+  document.querySelectorAll(".aba-inc").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = parseInt(btn.dataset.id, 10);
+      const qty = (adQtys.get(id) || 0) + 1;
+      adQtys.set(id, qty);
+      const valEl = document.getElementById(`qty-${id}`);
+      if (valEl) valEl.textContent = qty;
+      const decBtn = document.querySelector(`.aba-dec[data-id="${id}"]`);
+      if (decBtn) decBtn.disabled = false;
+      updateBreakdown();
+    });
+  });
+
+  document.querySelectorAll(".aba-dec").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = parseInt(btn.dataset.id, 10);
+      const qty = Math.max(0, (adQtys.get(id) || 0) - 1);
+      adQtys.set(id, qty);
+      const valEl = document.getElementById(`qty-${id}`);
+      if (valEl) valEl.textContent = qty;
+      btn.disabled = qty === 0;
+      updateBreakdown();
+    });
+  });
+
+  // Continuar (placeholder → WhatsApp por ahora)
+  const continuar = document.getElementById("aba-continuar");
+  if (continuar) {
+    continuar.addEventListener("click", () => {
+      const { rows } = calcExtras();
+      const v = data.vehiculo;
+      const r = data.reserva;
+      let text =
+        `Hola! Quiero confirmar esta reserva:\n` +
+        `• Vehículo: ${v.MODELO} (Cat. ${v["Categoría"]})\n` +
+        `• Retiro: ${r.sucursal_retiro} — ${r.fecha_retiro} ${r.hora_retiro}\n` +
+        `• Devolución: ${r.sucursal_devolucion} — ${r.fecha_devolucion} ${r.hora_devolucion}\n`;
+      if (rows.length) {
+        text += `\nExtras seleccionados:\n` + rows.map((x) => `  - ${x.nombre}`).join("\n");
+      }
+      const { totalExtra } = calcExtras();
+      const total = data.tarifa.total_tarjeta + totalExtra;
+      text += `\n\nTotal estimado: ${fmt(total)}`;
+      window.open(`https://wa.me/${data.waNumber}?text=${encodeURIComponent(text)}`, "_blank");
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  // Página de adicionales
+  if (window.abaCotizacion) {
+    initAdicionalesPage(window.abaCotizacion);
+    return;
+  }
+
   flatpickr.localize(Spanish);
 
   const pickupLocationSelect = document.querySelector('#pickup_ubicacion');
@@ -429,59 +534,13 @@ document.addEventListener("DOMContentLoaded", () => {
     openModalFromCard(card);
   });
 
-  // Click "Reservar ahora" (crear consulta + ir a WhatsApp)
-  document.addEventListener("click", async (e) => {
-    const waBtn = e.target.closest("#aba-modal-wa");
-    if (!waBtn) return;
-
-    // Si no tenemos config, dejamos el href como estaba
-    if (!window.abaReservas?.ajaxUrl || !window.abaReservas?.nonce) return;
-
+  // Click "Seleccionar adicionales" → navegar a la página de adicionales
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("#aba-modal-wa");
+    if (!btn) return;
     e.preventDefault();
-
-    const baseText = waBtn.dataset.baseText || "";
-
-    const form = new URLSearchParams();
-    form.set("action", "aba_reservas_create_consulta");
-    form.set("nonce", window.abaReservas.nonce);
-
-    form.set("model", waBtn.dataset.model || "");
-    form.set("cat", waBtn.dataset.cat || "");
-    form.set("priceLabel", waBtn.dataset.priceLabel || "");
-    form.set("cashLabel", waBtn.dataset.cashLabel || "");
-
-    form.set("pickup_ubicacion", waBtn.dataset.pickupUbicacion || "");
-    form.set("pickup_fecha", waBtn.dataset.pickupFecha || "");
-    form.set("pickup_horario", waBtn.dataset.pickupHorario || "");
-    form.set("dropoff_fecha", waBtn.dataset.dropoffFecha || "");
-    form.set("dropoff_horario", waBtn.dataset.dropoffHorario || "");
-
-    try {
-      waBtn.setAttribute("aria-busy", "true");
-
-      const res = await fetch(window.abaReservas.ajaxUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: form.toString(),
-      });
-
-      const json = await res.json();
-      const consultaUrl = json?.data?.consultaUrl;
-
-      if (!res.ok || !json?.success || !consultaUrl) {
-        // fallback al WhatsApp sin URL
-        window.location.href = waBtn.getAttribute("href") || "#";
-        return;
-      }
-
-      const finalText = `${baseText}\n\n${consultaUrl}`;
-      const finalWaUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(finalText)}`;
-      window.location.href = finalWaUrl;
-    } catch {
-      window.location.href = waBtn.getAttribute("href") || "#";
-    } finally {
-      waBtn.removeAttribute("aria-busy");
-    }
+    const href = btn.getAttribute("href");
+    if (href && href !== "#") window.location.href = href;
   });
 
   // Cerrar por overlay o botones
