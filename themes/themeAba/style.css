@@ -1773,11 +1773,11 @@ header .lang a.qtranxs_text_pt::after { content: "Por"; font-size: 12px; }
     font-size: 32px !important;
 }
 #highligth {
-    min-height: auto !important;
+    min-height: calc(100vh - 100px) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
-    padding-bottom: 40px !important;
+    padding-bottom: 0 !important;
 }
 #highligth .box {
     width: 100% !important;
