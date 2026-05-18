@@ -45,6 +45,14 @@ if (!function_exists('aba_reserva_render_time_options')) {
   min-height: 24px !important;
   height: 24px !important;
   line-height: 24px !important;
+  text-align: left !important;
+  font-weight: 700 !important;
+  color: #679938 !important;
+}
+.reserva-search-field .ss-single-selected .placeholder {
+  color: #679938 !important;
+  font-weight: 700 !important;
+  text-align: left !important;
 }
 .reserva-search-field input[type="text"] {
   height: 24px !important;
@@ -52,6 +60,9 @@ if (!function_exists('aba_reserva_render_time_options')) {
   line-height: 24px !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  text-align: left !important;
+  font-weight: 700 !important;
+  color: #679938 !important;
 }
 @media (max-width: 767px) {
   .aba-fields-grid { grid-template-columns: 1fr !important; }
