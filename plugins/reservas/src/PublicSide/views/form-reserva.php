@@ -98,6 +98,19 @@ if (!function_exists('aba_reserva_render_time_options')) {
   .flatpickr-monthDropdown-months,
   .flatpickr-current-month input { font-size: 16px !important; }
 }
+@media (min-width: 768px) {
+  .reserva-search-card.is-sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 99999;
+    border-radius: 0 !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+    padding: 8px 32px !important;
+    background: #fff !important;
+  }
+}
 </style>
 <section style="padding:0 0 24px;">
   <form action="<?php echo esc_url($action); ?>" method="get">
@@ -151,3 +164,57 @@ if (!function_exists('aba_reserva_render_time_options')) {
 
   </form>
 </section>
+<script>
+(function () {
+  function initStickyForm() {
+    if (window.innerWidth < 768) return;
+    var card = document.querySelector('.reserva-search-card');
+    if (!card || card.dataset.stickyInit) return;
+    card.dataset.stickyInit = '1';
+
+    var placeholder = document.createElement('div');
+    placeholder.style.display = 'none';
+    card.parentNode.insertBefore(placeholder, card);
+
+    var originalTop = card.getBoundingClientRect().top + window.scrollY;
+
+    function update() {
+      if (window.innerWidth < 768) {
+        if (card.classList.contains('is-sticky')) {
+          card.classList.remove('is-sticky');
+          placeholder.style.display = 'none';
+        }
+        return;
+      }
+      if (window.scrollY > originalTop) {
+        if (!card.classList.contains('is-sticky')) {
+          placeholder.style.height = card.offsetHeight + 'px';
+          placeholder.style.display = 'block';
+          card.classList.add('is-sticky');
+        }
+      } else {
+        if (card.classList.contains('is-sticky')) {
+          card.classList.remove('is-sticky');
+          placeholder.style.display = 'none';
+        }
+      }
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', function () {
+      if (card.classList.contains('is-sticky')) {
+        card.classList.remove('is-sticky');
+        placeholder.style.display = 'none';
+      }
+      originalTop = card.getBoundingClientRect().top + window.scrollY;
+      update();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStickyForm);
+  } else {
+    initStickyForm();
+  }
+})();
+</script>
