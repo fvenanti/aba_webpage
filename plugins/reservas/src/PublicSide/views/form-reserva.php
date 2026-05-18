@@ -61,6 +61,9 @@ if (!function_exists('aba_reserva_render_time_options')) {
   font-size: 14px !important;
   text-align: left !important;
 }
+.reserva-search-field input[type="hidden"] {
+  display: none !important;
+}
 .reserva-search-field input[type="text"] {
   height: 24px !important;
   min-height: 24px !important;
