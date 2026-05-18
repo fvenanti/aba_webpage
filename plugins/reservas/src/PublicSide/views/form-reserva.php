@@ -101,7 +101,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
             <div class="reserva-search-field">
               <label class="block mb-2 font-bold text-[#1A202C]!" for="reserva_rango">Fecha de recogida / devolución</label>
               <input type="text" class="w-full! py-2! px-0! h-10! shadow-none! placeholder:text-[#90A3BF]! text-sm!" id="reserva_rango"
-                placeholder="Seleccionar rango" autocomplete="off" />
+                placeholder="Seleccionar rango" autocomplete="off" style="font-size:16px;" />
               <input type="hidden" id="pickup_fecha" name="pickup_fecha" value="" />
               <input type="hidden" id="dropoff_fecha" name="dropoff_fecha" value="" />
             </div>
