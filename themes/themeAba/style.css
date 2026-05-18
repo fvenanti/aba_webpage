@@ -1773,7 +1773,7 @@ header .lang a.qtranxs_text_pt::after { content: "Por"; font-size: 12px; }
     font-size: 32px !important;
 }
 #highligth {
-    min-height: calc(100vh - 100px) !important;
+    min-height: calc(100vh - 115px) !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
@@ -1788,5 +1788,34 @@ header .lang a.qtranxs_text_pt::after { content: "Por"; font-size: 12px; }
         font-size: 24px !important;
         width: 90% !important;
         padding: 30px 0 15px !important;
+    }
+}
+
+/* Mobile: hero y form */
+@media (max-width: 767px) {
+    #highligth {
+        min-height: auto !important;
+        padding-top: 20px !important;
+        padding-bottom: 40px !important;
+        justify-content: flex-start !important;
+    }
+    #highligth #buscador-home > section {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-top: 0 !important;
+    }
+    #highligth #buscador-home .reserva-search-card {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        border-radius: 8px 8px 0 0 !important;
+    }
+    .reserva-inline-form .reserva-submit-wrap {
+        border-radius: 0 0 8px 8px !important;
+        overflow: hidden !important;
+    }
+    .reserva-inline-form .reserva-submit-wrap .btn {
+        border-radius: 0 !important;
+        padding-top: 16px !important;
+        padding-bottom: 16px !important;
     }
 }
