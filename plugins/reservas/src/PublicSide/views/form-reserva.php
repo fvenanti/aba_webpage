@@ -63,6 +63,11 @@ if (!function_exists('aba_reserva_render_time_options')) {
 .reserva-search-field input[type="hidden"] {
   display: none !important;
 }
+.reserva-search-field .flatpickr-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+}
 .reserva-search-field input[type="text"] {
   height: auto !important;
   min-height: unset !important;
