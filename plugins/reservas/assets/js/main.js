@@ -267,6 +267,11 @@ function initAdicionalesPage(data) {
 
     const elEfectivo = document.getElementById("aba-total-efectivo");
     if (elEfectivo) elEfectivo.textContent = fmt(grandEfectivo);
+
+    const elSena = document.getElementById("aba-sena-monto");
+    if (elSena && data.sena_pct) {
+      elSena.textContent = fmt(Math.round(grandTarjeta * data.sena_pct / 100));
+    }
   }
 
   // Coberturas: toggles

@@ -186,6 +186,12 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
             <span id="aba-total-efectivo"><?php echo $fmt_precio($tar['total_efectivo']); ?></span>
           </div>
           <?php endif; ?>
+          <?php if (!empty($tar['sena_pct'])): ?>
+          <div class="aba-breakdown-row" style="margin-top:10px;padding-top:10px;border-top:1px solid #E2E8F0;color:#679938;font-weight:700;font-size:14px;">
+            <span>Seña requerida (<?php echo intval($tar['sena_pct']); ?>%)</span>
+            <span id="aba-sena-monto"><?php echo $fmt_precio($tar['total_tarjeta'] * $tar['sena_pct'] / 100); ?></span>
+          </div>
+          <?php endif; ?>
         </div>
 
         <!-- Franquicias -->
@@ -214,6 +220,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
 window.abaCotizacion = <?php echo wp_json_encode([
   'dias'        => $dias,
   'tarifa'      => $tar,
+  'sena_pct'    => isset($tar['sena_pct']) ? intval($tar['sena_pct']) : null,
   'coberturas'  => $coberturas,
   'adicionales' => $adicionales,
   'vehiculo'    => $v,

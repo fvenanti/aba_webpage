@@ -44,6 +44,7 @@ if (!empty($modelos)) {
       'bags'         => isset($modelo['Valijas'])     ? intval($modelo['Valijas'])        : null,
       'transmission' => isset($modelo['Transmision']) ? esc_html($modelo['Transmision']) : null,
       'id_autos'     => intval($modelo['IdAutos']     ?? 0),
+      'sena_pct'     => isset($modelo['Sena_Pct'])   ? intval($modelo['Sena_Pct'])  : null,
     ];
     $cats[esc_html($modelo['Categoría'])] = isset($cats[esc_html($modelo['Categoría'])]) ? $cats[esc_html($modelo['Categoría'])] + 1 : 1;
     $price = aba_parse_ars($modelo['Tarifa_Final']);
@@ -161,6 +162,7 @@ if (!empty($modelos)) {
             data-bags="<?php echo esc_attr($car['bags'] ?? ''); ?>"
             data-transmission="<?php echo esc_attr($car['transmission'] ?? ''); ?>"
             data-idautos="<?php echo esc_attr($car['id_autos']); ?>"
+            data-senapct="<?php echo esc_attr($car['sena_pct'] ?? ''); ?>"
             class="flex flex-col justify-between gap-5 p-6 bg-white rounded-lg">
             <div class="">
               <h3 class="text-xl! text-[#1A202C]! font-bold mb-1! mt-0! p-0!">
@@ -194,6 +196,15 @@ if (!empty($modelos)) {
                 <?php echo esc_html($car['cash_price']); ?><br />
                 Tarifa abonando en efectivo
               </p>
+              <?php if ($car['sena_pct'] !== null): ?>
+              <p style="font-size:12px;color:#679938;font-weight:600;margin-bottom:12px;">
+                Seña requerida: <?php echo $car['sena_pct']; ?>%
+                (<?php
+                  $sena_monto = round(aba_parse_ars($car['price']) * $car['sena_pct'] / 100);
+                  echo '$ ' . number_format($sena_monto, 0, ',', '.');
+                ?>)
+              </p>
+              <?php endif; ?>
               <button id='toggleModal'
                 class='aba-open-modal btn font-semibold! rounded-sm! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0! w-full!'>Reservar ahora</button>
             </div>
