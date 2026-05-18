@@ -78,6 +78,9 @@ if (!function_exists('aba_reserva_render_time_options')) {
   .aba-form-btn   { width: 100% !important; }
   .aba-form-btn button { width: 100% !important; }
   .reserva-search-card { margin-left: 16px !important; margin-right: 16px !important; }
+  .reserva-search-field input[type="text"],
+  .reserva-search-field .ss-main,
+  .reserva-search-field select { font-size: 16px !important; }
 }
 </style>
 <section style="padding:0 0 24px;">
