@@ -418,8 +418,8 @@ header .toolsBox {
 header .lang,
 header .redes {
 	display: inline-block;
-	line-height: 38px;
-	margin: 40px 0;
+	line-height: 20px;
+	margin: 14px 0;
 }
 header .lang {
 	line-height: 22px;
