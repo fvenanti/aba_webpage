@@ -30,9 +30,6 @@ if (!function_exists('aba_reserva_render_time_options')) {
   border-radius: 8px !important;
   padding: 3px 10px !important;
   background: #fff !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
 }
 .reserva-search-field label {
   color: #679938 !important;
@@ -40,9 +37,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
-  margin-bottom: 0 !important;
+  margin-bottom: 2px !important;
   line-height: 1.2 !important;
-  min-height: unset !important;
+  height: 40px !important;
+  overflow: hidden !important;
   display: block !important;
   text-align: left !important;
 }
@@ -54,7 +52,6 @@ if (!function_exists('aba_reserva_render_time_options')) {
   font-weight: 700 !important;
   font-size: 14px !important;
   color: #679938 !important;
-  margin-top: auto !important;
 }
 .reserva-search-field .ss-single-selected .placeholder {
   color: #679938 !important;
@@ -75,7 +72,6 @@ if (!function_exists('aba_reserva_render_time_options')) {
   font-weight: 700 !important;
   font-size: 14px !important;
   color: #679938 !important;
-  margin-top: auto !important;
 }
 @media (max-width: 767px) {
   .aba-fields-grid { grid-template-columns: 1fr !important; }
