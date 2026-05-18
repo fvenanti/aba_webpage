@@ -173,16 +173,15 @@ function openModalFromCard(card) {
 
   const badgesEl = document.getElementById("aba-modal-badges");
   if (badgesEl) {
-    const txLabels = { automatica: "Automática", manual: "Manual" };
     const badgeStyle = "display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#596780;background:#F6F7F9;padding:3px 8px;border-radius:20px;";
-    const badge = (icon, val, suffix = "") => {
-      const label = val !== "" ? `${val}${suffix}` : "—";
+    const badge = (icon, val) => {
+      const label = val !== "" ? val : "—";
       return `<span style="${badgeStyle}"><i class="fas ${icon}" style="font-size:10px;"></i>${label}</span>`;
     };
-    const txLabel = transmission !== "" ? (txLabels[transmission] ?? (transmission.charAt(0).toUpperCase() + transmission.slice(1))) : "";
+    const txLabel = transmission !== "" ? (transmission === "automatica" ? "Auto" : "Manual") : "";
     badgesEl.innerHTML =
-      badge("fa-user",     passengers, " pas.") +
-      badge("fa-suitcase", bags,        " val.") +
+      badge("fa-user",     passengers) +
+      badge("fa-suitcase", bags) +
       badge("fa-cog",      txLabel);
   }
 

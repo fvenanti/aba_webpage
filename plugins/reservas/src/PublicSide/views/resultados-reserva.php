@@ -171,11 +171,10 @@ if (!empty($modelos)) {
               <?php if ($car['passengers'] !== null || $car['bags'] !== null || $car['transmission'] !== null): ?>
               <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
                 <?php
-                $tx_labels = ['automatica' => 'Automática', 'manual' => 'Manual'];
                 $badges = [
-                  ['fa-user',     $car['passengers'] !== null ? $car['passengers'] . ' pas.' : '—'],
-                  ['fa-suitcase', $car['bags']        !== null ? $car['bags'] . ' val.'       : '—'],
-                  ['fa-cog',      $car['transmission'] !== null ? ($tx_labels[$car['transmission']] ?? ucfirst($car['transmission'])) : '—'],
+                  ['fa-user',     $car['passengers']  !== null ? (string) $car['passengers'] : '—'],
+                  ['fa-suitcase', $car['bags']         !== null ? (string) $car['bags']       : '—'],
+                  ['fa-cog',      $car['transmission'] !== null ? ($car['transmission'] === 'automatica' ? 'Auto' : 'Manual') : '—'],
                 ];
                 foreach ($badges as [$icon, $label]):
                 ?>
