@@ -30,12 +30,12 @@ if (!function_exists('aba_reserva_render_time_options')) {
 <section style="padding:0 0 24px;">
   <form action="<?php echo esc_url($action); ?>" method="get">
 
-    <div class="bg-white rounded-lg reserva-search-card" style="padding:20px 16px 24px;">
-      <div class="aba-form-inner" style="display:flex;flex-direction:row;align-items:stretch;gap:16px;">
+    <div class="bg-white rounded-lg reserva-search-card" style="padding:20px 8px 24px;">
+      <div class="aba-form-inner" style="display:flex;flex-direction:row;align-items:stretch;gap:8px;">
 
         <div style="flex:1;min-width:0;">
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6">
-            <div class="reserva-search-field md:col-span-2">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-4">
+            <div class="reserva-search-field md:col-span-1">
               <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de recogida / devolución</label>
               <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
                 <option value="bariloche" selected>Bariloche Aeropuerto</option>
