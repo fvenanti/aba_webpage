@@ -1774,7 +1774,7 @@ header .lang a.qtranxs_text_pt::after { content: "Por"; font-size: 12px; }
     padding: 35px 0 20px !important;
     font-size: 32px !important;
     font-family: 'Montserrat', sans-serif !important;
-    font-weight: 200 !important;
+    font-weight: 600 !important;
     letter-spacing: 0.03em !important;
 }
 #highligth {
