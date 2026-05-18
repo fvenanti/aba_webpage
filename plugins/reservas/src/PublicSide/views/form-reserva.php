@@ -28,16 +28,16 @@ if (!function_exists('aba_reserva_render_time_options')) {
 .reserva-search-field {
   border: 2px solid #679938 !important;
   border-radius: 8px !important;
-  padding: 10px 14px !important;
+  padding: 5px 14px !important;
   background: #fff !important;
 }
 .reserva-search-field label {
   color: #679938 !important;
-  font-size: 12px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
-  margin-bottom: 4px !important;
+  margin-bottom: 0 !important;
   display: block !important;
 }
 @media (max-width: 767px) {
