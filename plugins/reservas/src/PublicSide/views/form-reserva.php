@@ -68,8 +68,8 @@ if (!function_exists('aba_reserva_render_time_options')) {
         <div class="aba-form-btn" style="flex-shrink:0;display:flex;align-items:center;">
           <button type="submit"
             class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!"
-            style="white-space:nowrap;">
-            Ver vehículos disponibles
+            style="white-space:nowrap;padding:20px 28px;min-width:120px;">
+            Consultar
           </button>
         </div>
 
