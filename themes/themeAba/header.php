@@ -46,7 +46,7 @@
 
 		<?php wp_head(); ?>
 		<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,400italic,700' rel='stylesheet' type='text/css'>
-		<link href='https://fonts.googleapis.com/css2?family=Raleway:wght@300;600&display=swap' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css2?family=Raleway:wght@300;600&family=Montserrat:wght@200;300;600&display=swap' rel='stylesheet' type='text/css'>
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
 		<!-- Facebook Pixel Code -->
