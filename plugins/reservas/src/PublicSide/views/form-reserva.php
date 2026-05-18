@@ -28,7 +28,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
 .reserva-search-field {
   border: 2px solid #679938 !important;
   border-radius: 8px !important;
-  padding: 4px 12px !important;
+  padding: 3px 10px !important;
   background: #fff !important;
   display: flex !important;
   flex-direction: column !important;
@@ -42,14 +42,14 @@ if (!function_exists('aba_reserva_render_time_options')) {
   letter-spacing: 0.04em !important;
   margin-bottom: 0 !important;
   line-height: 1.2 !important;
-  min-height: 2.6em !important;
+  min-height: 2.2em !important;
   display: block !important;
   text-align: left !important;
 }
 .reserva-search-field .ss-main {
-  min-height: 24px !important;
-  height: 24px !important;
-  line-height: 24px !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  line-height: 20px !important;
   text-align: left !important;
   font-weight: 700 !important;
   font-size: 14px !important;
@@ -83,7 +83,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
 <section style="padding:0 0 24px;">
   <form action="<?php echo esc_url($action); ?>" method="get">
 
-    <div class="bg-white rounded-lg reserva-search-card" style="padding:20px 8px 24px;">
+    <div class="bg-white rounded-lg reserva-search-card" style="padding:10px 8px 12px;">
       <div class="aba-form-inner" style="display:flex;flex-direction:row;align-items:stretch;gap:8px;">
 
         <div style="flex:1;min-width:0;">
@@ -122,7 +122,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
         <div class="aba-form-btn" style="flex-shrink:0;display:flex;align-items:center;">
           <button type="submit"
             class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!"
-            style="white-space:nowrap;padding:20px 28px;min-width:120px;">
+            style="white-space:nowrap;padding:10px 28px;min-width:120px;">
             Consultar
           </button>
         </div>
