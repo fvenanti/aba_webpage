@@ -32,7 +32,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
   background: #fff !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: flex-start !important;
+  justify-content: space-between !important;
 }
 .reserva-search-field label {
   color: #679938 !important;
@@ -42,7 +42,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
   letter-spacing: 0.04em !important;
   margin-bottom: 0 !important;
   line-height: 1.2 !important;
-  min-height: 2.2em !important;
+  min-height: unset !important;
   display: block !important;
   text-align: left !important;
 }
