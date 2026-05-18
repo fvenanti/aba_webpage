@@ -19,19 +19,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
   }
 }
 ?>
-<style>
-@media (max-width: 767px) {
-  .reserva-inline-form .aba-btn-desktop.reserva-submit-wrap { display: none !important; }
-  .aba-btn-mobile { display: block !important; width: 100%; margin-top: 16px; }
-}
-@media (min-width: 768px) {
-  .aba-btn-mobile { display: none !important; }
-}
-</style>
 <section style="padding:0 6px 24px;">
-  <form action="<?php echo esc_url($action); ?>" method="get" class="reserva-inline-form" style="display:flex !important;align-items:center !important;gap:12px !important;">
+  <form action="<?php echo esc_url($action); ?>" method="get">
 
-    <div class="bg-white rounded-lg md:px-8 reserva-search-card" style="flex:1 1 auto !important;min-width:0 !important;padding:20px 16px;">
+    <div class="bg-white rounded-lg reserva-search-card" style="padding:20px 16px 24px;">
       <div class="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6">
         <div class="reserva-search-field md:col-span-1">
           <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de entrega</label>
@@ -63,18 +54,14 @@ if (!function_exists('aba_reserva_render_time_options')) {
         </div>
       </div>
 
-      <!-- Botón mobile: dentro del card para que siempre sea visible -->
-      <button type="submit" class="aba-btn-mobile btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!" style="display:none;">
-        Ver vehículos disponibles
-      </button>
+      <div style="margin-top:16px;">
+        <button type="submit"
+          class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!"
+          style="width:100%;">
+          Ver vehículos disponibles
+        </button>
+      </div>
     </div>
 
-    <!-- Botón desktop: a la derecha del card -->
-    <div class="aba-btn-desktop reserva-submit-wrap" style="flex-shrink:0 !important;">
-      <button type="submit"
-        class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!">
-        Ver vehículos disponibles
-      </button>
-    </div>
   </form>
 </section>
