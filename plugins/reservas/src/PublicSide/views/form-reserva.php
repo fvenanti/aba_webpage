@@ -19,6 +19,15 @@ if (!function_exists('aba_reserva_render_time_options')) {
   }
 }
 ?>
+<style>
+@media (max-width: 767px) {
+  .aba-btn-desktop { display: none !important; }
+  .aba-btn-mobile  { display: block !important; width: 100%; margin-top: 16px; }
+}
+@media (min-width: 768px) {
+  .aba-btn-mobile { display: none !important; }
+}
+</style>
 <section style="padding:0 6px 24px;">
   <form action="<?php echo esc_url($action); ?>" method="get" class="reserva-inline-form" style="display:flex !important;align-items:center !important;gap:12px !important;">
 
@@ -53,9 +62,15 @@ if (!function_exists('aba_reserva_render_time_options')) {
           </select>
         </div>
       </div>
+
+      <!-- Botón mobile: dentro del card para que siempre sea visible -->
+      <button type="submit" class="aba-btn-mobile btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!" style="display:none;">
+        Ver vehículos disponibles
+      </button>
     </div>
 
-    <div class="reserva-submit-wrap" style="flex-shrink:0 !important;">
+    <!-- Botón desktop: a la derecha del card -->
+    <div class="aba-btn-desktop reserva-submit-wrap" style="flex-shrink:0 !important;">
       <button type="submit"
         class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!">
         Ver vehículos disponibles
