@@ -57,10 +57,10 @@ if (!empty($modelos)) {
 
 <style>
 @media (min-width: 768px) {
-  .aba-results-layout { grid-template-columns: 220px 1fr !important; }
+  section.aba-results-layout { grid-template-columns: 220px 1fr !important; }
 }
 </style>
-<section class="aba-results-layout grid gap-8 grid-cols-1">
+<section class="aba-results-layout grid gap-8">
   <!-- Filters -->
   <div class="px-8 py-6 md:p-8 max-md:rounded-lg! bg-white space-y-12.5 relative z-0">
     <button id="toggleFilters" class="md:hidden text-2xl! text-[#1A202C]! font-bold mb-0! flex! items-center! justify-between! w-full!">
