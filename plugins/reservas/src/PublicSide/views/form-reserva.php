@@ -81,6 +81,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
   .reserva-search-field input[type="text"],
   .reserva-search-field .ss-main,
   .reserva-search-field select { font-size: 16px !important; }
+  .flatpickr-calendar input,
+  .flatpickr-calendar select,
+  .flatpickr-monthDropdown-months,
+  .flatpickr-current-month input { font-size: 16px !important; }
 }
 </style>
 <section style="padding:0 0 24px;">
