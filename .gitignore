@@ -1,0 +1,5 @@
+plugins/reservas/vendor/
+plugins/reservas/node_modules/
+plugins/reservas/dist/
+themes/themeAba/node_modules/
+*.log

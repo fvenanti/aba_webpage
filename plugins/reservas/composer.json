@@ -1,0 +1,35 @@
+{
+	"name": "upbrands/reservas",
+	"description": "Plugin de reservas de vehiculos con API",
+	"type": "wordpress-plugin",
+	"require": {
+		"guzzlehttp/guzzle": "^7.10",
+		"kucrut/vite-for-wp": "^0.11.4"
+	},
+	"autoload": {
+		"psr-4": {
+			"Upbrands\\Reservas\\": "src/"
+		}
+	},
+	"files": [
+		"src/Shared/Compat.php"
+	],
+	"authors": [
+		{
+			"name": "Gonzalo Ulla",
+			"email": "gonzalo@upbrands.agency"
+		}
+	],
+	"config": {
+		"optimize-autoloader": true,
+		"sort-packages": true,
+		"allow-plugins": {
+			"composer/installers": true
+		}
+	},
+	"minimum-stability": "stable",
+	"prefer-stable": true,
+	"require-dev": {
+		"php-stubs/wp-cli-stubs": "^2.12"
+	}
+}

@@ -1,0 +1,83 @@
+//
+// Responsive: Tablet to desktop
+// --------------------------------------------------
+
+
+@media (min-width: 768px) and (max-width: 979px) {
+	.box{
+		width: auto;
+		margin: 0;
+		padding: 0 @space*2;
+		position: relative;
+	}
+	header{
+		.box{
+			padding: 0;
+			margin: 0 @space;
+		}
+		.toolsBox{
+			position: absolute;
+			top: 0;
+			right: 0;
+			.redes, .lang{
+				margin: @space/2 0;
+			}
+		}
+		#menu{
+			#menuResp{
+				display: inline-block;
+				padding: 0;
+				margin: 0;
+				ul{
+					padding: @space*2 0 0;
+					margin: 0;
+					li{
+						margin: 0;
+						padding: 0;
+						position: relative;
+						a{
+							padding: @space*2 @space/2 @space/2;
+							text-transform: uppercase;
+							font-size: 14px;
+							font-weight: 300;
+							color: #fcfcfc;
+							line-height: 38px;
+							display: inline-block;
+							border-bottom: 4px solid @main;
+							&:hover{
+								color: darken(@main, 15%);
+								border-bottom: 4px solid lighten(@main, 10%);
+							}
+						}
+						&:last-child{
+							>ul{
+								right: 0;
+							}
+							&:hover{
+								>ul{
+									top: 0;
+									right: 0;
+									left: auto;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	footer{
+		.infoFooter{
+			display: block;
+	    clear: both;
+	    width: auto;
+	    float: none;
+	    margin-left: 0;
+	    margin-right: 0;
+			.logoFooter{
+			}
+			.infoBox{
+			}
+		}
+	}
+}

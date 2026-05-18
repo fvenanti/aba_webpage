@@ -1,0 +1,54 @@
+//
+// Responsive: Large desktop and up
+// --------------------------------------------------
+
+
+@media (min-width: 980px) and (max-width: 1289px) {
+	.box{
+		width: auto;
+		margin: 0;
+		padding: 0 @space*2;
+		position: relative;
+	}
+}
+@media (max-width: 1100px) {
+	header{
+		.box{
+			padding: 0;
+			margin: 0 @space;
+		}
+		.toolsBox{
+			
+		}
+		#menu{
+			#menuResp{
+				display: inline-block;
+				padding: 0;
+				margin: 0;
+				ul{
+					padding: 0 0 0;
+					margin: 0;
+					li{
+						margin: 0;
+						padding: 0;
+						position: relative;
+						a{
+							padding: @space*2 @space/2 @space*2;
+							text-transform: uppercase;
+							font-size: 13px;
+							font-weight: 300;
+							color: #fcfcfc;
+							line-height: 38px;
+							display: inline-block;
+							border-bottom: 4px solid @main;
+							&:hover{
+								color: darken(@main, 15%);
+								border-bottom: 4px solid lighten(@main, 10%);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

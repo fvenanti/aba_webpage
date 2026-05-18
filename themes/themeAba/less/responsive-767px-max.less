@@ -1,0 +1,149 @@
+//
+// Responsive: Landscape phone to desktop/tablet
+// --------------------------------------------------
+
+
+@media (max-width: 767px) {
+	.box{
+		width: auto;
+		margin: 0;
+		padding: 0 @space/2;
+		position: relative;
+	}
+	img.right, img.left{
+		display: block;
+	    clear: both;
+	    width: auto;
+	    float: none;
+	    margin-left: 0;
+	    margin-right: 0;
+	    padding: 0 0 @space*2;
+	}
+	header{
+		.box{
+			padding: 0;
+			margin: 0 @space;
+		}
+		.logo{
+			top: -40px;
+		}
+		.redes, .lang{
+			margin-bottom: @space;
+			margin-top: @space;
+		}
+	}
+	#presentation, #news{
+		padding: @space*2 0;
+	}
+	.article{
+		.tableBox{
+			.tableHeader{
+				.cell{
+				}
+			}
+			.rowTable{
+				&:last-child{
+				}
+			}
+			.cell{
+			}
+			.cellbig{
+				width: auto;
+				float: none;
+				display: block;
+				clear: both;
+			}
+			.cellSmall{
+				width: 14%;
+				strong{
+					display: block;
+					width: 100%;
+					padding: 0 5px;
+				}
+			}
+			.cellVehicle{
+			}
+		}
+	}
+	#book{
+		.col02Form{
+			padding-top: 0px !important;
+			margin: 0;
+			label.gfield_label{
+				display: none;
+			}
+		}
+		.col03Form{
+			width: 100%;
+			float: none;
+			clear: none;
+		}
+	}
+	#highligth{
+		.box{
+			padding: 0;
+		}
+		h1{
+			font-size: 28px;
+			width: 80%;
+			padding: @space*5 0 @space*4;
+		}
+		a{
+			width: 32%;
+			font-size: 14px;
+		}
+	}
+	.js #menuResp, #menuResp{
+		display:none !important;
+	}
+	
+	.js .slicknav_menu {
+		display:block;
+	}
+	.og-grid{
+		li.carLi{
+			margin: 0 0 @space/4;
+		}
+	}
+}
+
+
+
+// UP TO LANDSCAPE PHONE
+// ---------------------
+
+@media (max-width: 480px) {
+	#flotaSlider{
+		display: none;
+	}
+	.article{
+		.tableBox{
+			.tableHeader{
+				.cell{
+				}
+			}
+			.rowTable{
+				&:last-child{
+				}
+			}
+			.cell{
+			}
+			.cellbig{
+				width: auto;
+				float: none;
+				display: block;
+				clear: both;
+			}
+			.cellSmall{
+				width: 25%;
+				strong{
+					display: block;
+					width: 100%;
+					padding: 0 5px;
+				}
+			}
+			.cellVehicle{
+			}
+		}
+	}
+}
