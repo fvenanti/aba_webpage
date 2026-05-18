@@ -467,7 +467,7 @@ header .redes a .fa {
 	line-height: 50px;
 }
 #highligth {
-	background: url(img/bariloche.jpg) center;
+	background: url(img/bariloche.jpg) center 65%;
 	-webkit-background-size: cover;
 	-moz-background-size: cover;
 	-o-background-size: cover;
@@ -1778,8 +1778,8 @@ header .lang a.qtranxs_text_pt::after { content: "Por"; font-size: 12px; }
     min-height: calc(100vh - 115px) !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: center !important;
-    padding-bottom: 0 !important;
+    justify-content: flex-end !important;
+    padding-bottom: 40px !important;
 }
 #highligth .box {
     width: 100% !important;
