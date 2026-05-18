@@ -352,7 +352,7 @@ header #menu #menuResp ul li {
 	position: relative;
 }
 header #menu #menuResp ul li a {
-	padding: 40px 20px;
+	padding: 40px 12px;
 	text-transform: uppercase;
 	font-size: 14px;
 	font-weight: 300;
