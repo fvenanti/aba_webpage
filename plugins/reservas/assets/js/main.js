@@ -156,6 +156,9 @@ function openModalFromCard(card) {
   const cashLabel = card.dataset.cashLabel || "";
   const img = card.dataset.image || "";
   const details = card.dataset.details || "";
+  const passengers = card.dataset.passengers ?? "";
+  const bags = card.dataset.bags ?? "";
+  const transmission = card.dataset.transmission ?? "";
 
   // Rellenar UI
   document.getElementById("aba-modal-subtitle").textContent = `Segmento ${cat}`;
@@ -167,6 +170,21 @@ function openModalFromCard(card) {
   const imgEl = document.getElementById("aba-modal-img");
   imgEl.src = img;
   imgEl.alt = model;
+
+  const badgesEl = document.getElementById("aba-modal-badges");
+  if (badgesEl) {
+    const txLabels = { automatica: "Automática", manual: "Manual" };
+    const badgeStyle = "display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#596780;background:#F6F7F9;padding:3px 8px;border-radius:20px;";
+    const badge = (icon, val, suffix = "") => {
+      const label = val !== "" ? `${val}${suffix}` : "—";
+      return `<span style="${badgeStyle}"><i class="fas ${icon}" style="font-size:10px;"></i>${label}</span>`;
+    };
+    const txLabel = transmission !== "" ? (txLabels[transmission] ?? (transmission.charAt(0).toUpperCase() + transmission.slice(1))) : "";
+    badgesEl.innerHTML =
+      badge("fa-user",     passengers, " pas.") +
+      badge("fa-suitcase", bags,        " val.") +
+      badge("fa-cog",      txLabel);
+  }
 
   // Armar WhatsApp con datos del form + auto
   const pickup_ubicacion = getVal("pickup_ubicacion");

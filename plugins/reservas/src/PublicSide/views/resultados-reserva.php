@@ -34,12 +34,15 @@ $price_range = ['min' => null, 'max' => null];
 if (!empty($modelos)) {
   foreach ($modelos as $modelo) {
     $cars[] = [
-      'category' => esc_html($modelo['Categoría']),
-      'price' => esc_html($modelo['Tarifa_Final']),
-      'cash_price' => esc_html($modelo['Tarifa_Efectivo']),
-      'model' => esc_html($modelo['MODELO']),
-      'image' => esc_url($modelo['Imagen']),
-      'details' => wpautop(wp_kses_post($modelo['Detalle'])),
+      'category'     => esc_html($modelo['Categoría']),
+      'price'        => esc_html($modelo['Tarifa_Final']),
+      'cash_price'   => esc_html($modelo['Tarifa_Efectivo']),
+      'model'        => esc_html($modelo['MODELO']),
+      'image'        => esc_url($modelo['Imagen']),
+      'details'      => wpautop(wp_kses_post($modelo['Detalle'])),
+      'passengers'   => isset($modelo['Pasajeros'])   ? intval($modelo['Pasajeros'])      : null,
+      'bags'         => isset($modelo['Valijas'])     ? intval($modelo['Valijas'])        : null,
+      'transmission' => isset($modelo['Transmision']) ? esc_html($modelo['Transmision']) : null,
     ];
     $cats[esc_html($modelo['Categoría'])] = isset($cats[esc_html($modelo['Categoría'])]) ? $cats[esc_html($modelo['Categoría'])] + 1 : 1;
     $price = aba_parse_ars($modelo['Tarifa_Final']);
@@ -150,8 +153,12 @@ if (!empty($modelos)) {
             data-price='<?php echo aba_parse_ars($car['price']); ?>'
             data-price-label="<?php echo esc_attr($car['price']); ?>"
             data-cash-label="<?php echo esc_attr($car['cash_price']); ?>"
-            data-model="<?php echo esc_attr($car['model']); ?>" data-image="<?php echo esc_url($car['image']); ?>"
+            data-model="<?php echo esc_attr($car['model']); ?>"
+            data-image="<?php echo esc_url($car['image']); ?>"
             data-details="<?php echo $car['details']; ?>"
+            data-passengers="<?php echo esc_attr($car['passengers'] ?? ''); ?>"
+            data-bags="<?php echo esc_attr($car['bags'] ?? ''); ?>"
+            data-transmission="<?php echo esc_attr($car['transmission'] ?? ''); ?>"
             class="flex flex-col justify-between gap-5 p-6 bg-white rounded-lg">
             <div class="">
               <h3 class="text-xl! text-[#1A202C]! font-bold mb-1! mt-0! p-0!">
@@ -161,6 +168,24 @@ if (!empty($modelos)) {
                 <?php echo esc_html($car['model']); ?>
               </p>
               <img src="<?php echo esc_url($car['image']); ?>" alt="<?php echo esc_html($car['model']); ?>">
+              <?php if ($car['passengers'] !== null || $car['bags'] !== null || $car['transmission'] !== null): ?>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+                <?php
+                $tx_labels = ['automatica' => 'Automática', 'manual' => 'Manual'];
+                $badges = [
+                  ['fa-user',     $car['passengers'] !== null ? $car['passengers'] . ' pas.' : '—'],
+                  ['fa-suitcase', $car['bags']        !== null ? $car['bags'] . ' val.'       : '—'],
+                  ['fa-cog',      $car['transmission'] !== null ? ($tx_labels[$car['transmission']] ?? ucfirst($car['transmission'])) : '—'],
+                ];
+                foreach ($badges as [$icon, $label]):
+                ?>
+                <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#596780;background:#F6F7F9;padding:3px 8px;border-radius:20px;">
+                  <i class="fas <?php echo esc_attr($icon); ?>" style="font-size:10px;"></i>
+                  <?php echo esc_html($label); ?>
+                </span>
+                <?php endforeach; ?>
+              </div>
+              <?php endif; ?>
             </div>
             <div class="">
               <p class="mb-5! text-xl! font-bold! text-[#1A202C]!"><?php echo esc_html($car['price']); ?></p>
@@ -204,6 +229,7 @@ if (!empty($modelos)) {
           <div class="space-y-3 mb-6 pb-6 border-b border-[#C3D4E966]">
             <h3 id="aba-modal-subtitle" class="text-3xl! text-[#1A202C]! font-bold mb-1! mt-0! p-0!"></h3>
             <p id="aba-modal-cat" class="font-medium text-[#596780] m-0"></p>
+            <div id="aba-modal-badges" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
           </div>
 
           <div class="grid grid-cols-2 gap-6">
