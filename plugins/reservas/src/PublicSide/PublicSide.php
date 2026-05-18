@@ -34,16 +34,16 @@ class PublicSide
       ]
     );
 
-    $adicionales_page = get_page_by_path('adicionales');
+    $cotizacion_page = get_page_by_path('cotizacion');
     wp_localize_script(
       'main',
       'abaReservas',
       [
-        'ajaxUrl'       => admin_url('admin-ajax.php'),
-        'nonce'         => wp_create_nonce('aba_reservas'),
-        'adicionalesUrl' => $adicionales_page
-          ? get_permalink($adicionales_page->ID)
-          : home_url('/adicionales/'),
+        'ajaxUrl'        => admin_url('admin-ajax.php'),
+        'nonce'          => wp_create_nonce('aba_reservas'),
+        'adicionalesUrl' => $cotizacion_page
+          ? get_permalink($cotizacion_page->ID)
+          : home_url('/cotizacion/'),
       ]
     );
   }
