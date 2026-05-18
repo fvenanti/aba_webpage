@@ -21,8 +21,8 @@ if (!function_exists('aba_reserva_render_time_options')) {
 ?>
 <style>
 @media (max-width: 767px) {
-  .aba-btn-desktop { display: none !important; }
-  .aba-btn-mobile  { display: block !important; width: 100%; margin-top: 16px; }
+  .reserva-inline-form .aba-btn-desktop.reserva-submit-wrap { display: none !important; }
+  .aba-btn-mobile { display: block !important; width: 100%; margin-top: 16px; }
 }
 @media (min-width: 768px) {
   .aba-btn-mobile { display: none !important; }
