@@ -179,7 +179,7 @@ if (!empty($modelos)) {
                 foreach ($badges as [$icon, $label]):
                 ?>
                 <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#596780;background:#F6F7F9;padding:3px 8px;border-radius:20px;">
-                  <i class="fas <?php echo esc_attr($icon); ?>" style="font-size:10px;"></i>
+                  <i class="fa <?php echo esc_attr($icon); ?>" style="font-size:10px;"></i>
                   <?php echo esc_html($label); ?>
                 </span>
                 <?php endforeach; ?>

@@ -176,7 +176,7 @@ function openModalFromCard(card) {
     const badgeStyle = "display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#596780;background:#F6F7F9;padding:3px 8px;border-radius:20px;";
     const badge = (icon, val) => {
       const label = val !== "" ? val : "—";
-      return `<span style="${badgeStyle}"><i class="fas ${icon}" style="font-size:10px;"></i>${label}</span>`;
+      return `<span style="${badgeStyle}"><i class="fa ${icon}" style="font-size:10px;"></i>${label}</span>`;
     };
     const txLabel = transmission !== "" ? (transmission === "automatica" ? "Auto" : "Manual") : "";
     badgesEl.innerHTML =
