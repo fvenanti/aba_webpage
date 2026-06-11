@@ -390,7 +390,7 @@ function initAdicionalesPage(data) {
         hora_devolucion:     parseHora(r.hora_devolucion),
         sucursal_retiro:     r.sucursal_retiro     || "",
         sucursal_devolucion: r.sucursal_devolucion || r.sucursal_retiro || "",
-        tarifa_total:        data.tarifa.subtotal,
+        tarifa_total:        data.tarifa.total_tarjeta,
         dias_cobrables:      data.dias,
         km_libres:           r.km_libres != null ? String(r.km_libres) : "",
         categoria:           v["Categoría"] || "",

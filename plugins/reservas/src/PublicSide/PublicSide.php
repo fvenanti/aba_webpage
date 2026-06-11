@@ -583,7 +583,7 @@ class PublicSide
 
   private function llamar_api_reservas(string $oid, array $datos, string $approval_code, array $payload): ?int
   {
-    if (empty($payload['id_autos'])) return null;
+    if (empty($payload['categoria']) || empty($payload['fecha_retiro'])) return null;
 
     $api_key = get_option('aba_reservas_api_key', '');
     if (!$api_key) return null;
@@ -597,29 +597,28 @@ class PublicSide
         'telefono' => $datos['telefono'],
       ],
       'reserva' => [
-        'id_autos'            => intval($payload['id_autos']),
+        'categoria'           => $payload['categoria']           ?? '',
         'fecha_retiro'        => $payload['fecha_retiro']        ?? '',
         'hora_retiro'         => intval($payload['hora_retiro']  ?? 9),
         'fecha_devolucion'    => $payload['fecha_devolucion']    ?? '',
         'hora_devolucion'     => intval($payload['hora_devolucion'] ?? 9),
         'sucursal_retiro'     => $payload['sucursal_retiro']     ?? '',
         'sucursal_devolucion' => $payload['sucursal_devolucion'] ?? $payload['sucursal_retiro'] ?? '',
-        'tarifa_total'        => floatval($payload['tarifa_total']    ?? 0),
-        'dias_cobrables'      => intval($payload['dias_cobrables']   ?? 0),
-        'km_libres'           => $payload['km_libres']           ?? '',
-        'categoria'           => $payload['categoria']           ?? '',
+        'tarifa_total'        => intval($payload['tarifa_total']    ?? 0),
+        'dias_cobrables'      => intval($payload['dias_cobrables']  ?? 0),
+        'km_libres'           => $payload['km_libres']           ?? 'Ilimitados',
         'adicionales'         => $payload['adicionales']         ?? [],
         'cobertura'           => $payload['cobertura']           ?? null,
       ],
       'pago_sena' => [
-        'importe'             => floatval($datos['monto']),
+        'importe'             => intval($datos['monto']),
         'fecha'               => wp_date('Y-m-d'),
         'tipo_pago'           => 'Tarjeta',
         'moneda'              => 'ARS',
         'cuotas'              => 1,
         'concepto'            => 'Seña reserva web',
         'tipo_cambio'         => 1,
-        'referencia_externa'  => $oid,
+        'ref_externa'         => $oid,
         'codigo_autorizacion' => $approval_code,
       ],
       'origen' => 'web',
