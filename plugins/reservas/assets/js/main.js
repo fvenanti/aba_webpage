@@ -285,12 +285,20 @@ function initAdicionalesPage(data) {
   }
   updateBreakdown();
 
-  // Coberturas: toggles
+  // Coberturas: toggles mutuamente excluyentes
   document.querySelectorAll(".aba-cob-toggle").forEach((chk) => {
     chk.addEventListener("change", () => {
-      const clave = chk.value;
-      if (chk.checked) cobSelections.add(clave);
-      else cobSelections.delete(clave);
+      if (chk.checked) {
+        document.querySelectorAll(".aba-cob-toggle").forEach((other) => {
+          if (other !== chk && other.checked) {
+            other.checked = false;
+            cobSelections.delete(other.value);
+          }
+        });
+        cobSelections.add(chk.value);
+      } else {
+        cobSelections.delete(chk.value);
+      }
       updateBreakdown();
     });
   });
@@ -348,6 +356,24 @@ function initAdicionalesPage(data) {
       const v = data.vehiculo;
       const r = data.reserva;
       continuar.dataset.senaMonto = senaMonto;
+
+      const parseHora = (h) => parseInt((h || "9").toString().split(":")[0], 10);
+
+      // Adicionales seleccionados: clave + cantidad (sin monto, el backend lee Items.Precio)
+      const adicionalesPayload = [];
+      data.adicionales.forEach((ad) => {
+        const qty = adQtys.get(ad.id) || 0;
+        if (qty > 0 && ad.clave) adicionalesPayload.push({ clave: ad.clave, cantidad: qty });
+      });
+
+      // Cobertura: clave + monto_total calculado por el front
+      const cobClave = [...cobSelections][0] || null;
+      const cobObj = cobClave ? (() => {
+        const cob = data.coberturas.find((c) => c.clave === cobClave);
+        if (!cob) return null;
+        return { clave: cob.clave, monto_total: Math.round(cob.precio * (cob.modo === "dia" ? data.dias : 1)) };
+      })() : null;
+
       continuar.dataset.payload = JSON.stringify({
         resumen:
           `Vehículo: ${v.MODELO} (Cat. ${v["Categoría"]})\n`
@@ -357,6 +383,19 @@ function initAdicionalesPage(data) {
           + (rows.length ? `Extras: ${rows.map((x) => x.nombre).join(", ")}\n` : "")
           + `Total tarjeta: ${fmt(grandTarjeta)}\n`
           + `Seña: ${fmt(senaMonto)}`,
+        id_autos:            data.id_autos,
+        fecha_retiro:        r.fecha_retiro,
+        hora_retiro:         parseHora(r.hora_retiro),
+        fecha_devolucion:    r.fecha_devolucion,
+        hora_devolucion:     parseHora(r.hora_devolucion),
+        sucursal_retiro:     r.sucursal_retiro     || "",
+        sucursal_devolucion: r.sucursal_devolucion || r.sucursal_retiro || "",
+        tarifa_total:        data.tarifa.subtotal,
+        dias_cobrables:      data.dias,
+        km_libres:           r.km_libres != null ? String(r.km_libres) : "",
+        categoria:           v["Categoría"] || "",
+        adicionales:         adicionalesPayload,
+        cobertura:           cobObj,
       });
 
       modal.style.display = "block";
@@ -378,15 +417,17 @@ function initAdicionalesPage(data) {
     showStep("aba-paso-datos");
   });
 
-  // Submit datos del cliente → AJAX → iframe Fiserv
+  // Submit datos del cliente → AJAX → Fiserv redirect
   document.getElementById("aba-datos-submit")?.addEventListener("click", () => {
-    const nombre = document.getElementById("aba-campo-nombre")?.value.trim() || "";
-    const email  = document.getElementById("aba-campo-email")?.value.trim()  || "";
-    const tel    = document.getElementById("aba-campo-tel")?.value.trim()    || "";
-    const errEl  = document.getElementById("aba-datos-error");
+    const nombre   = document.getElementById("aba-campo-nombre")?.value.trim()   || "";
+    const apellido = document.getElementById("aba-campo-apellido")?.value.trim() || "";
+    const dni      = document.getElementById("aba-campo-dni")?.value.trim()      || "";
+    const email    = document.getElementById("aba-campo-email")?.value.trim()    || "";
+    const tel      = document.getElementById("aba-campo-tel")?.value.trim()      || "";
+    const errEl    = document.getElementById("aba-datos-error");
 
-    if (!nombre || !email) {
-      errEl.textContent = "Nombre y email son obligatorios.";
+    if (!nombre || !apellido || !dni || !email) {
+      errEl.textContent = "Nombre, apellido, DNI y email son obligatorios.";
       errEl.style.display = "block";
       return;
     }
@@ -405,7 +446,7 @@ function initAdicionalesPage(data) {
       body: new URLSearchParams({
         action: "aba_fiserv_init",
         nonce:  window.abaReservas.nonce,
-        monto, nombre, email,
+        monto, nombre, apellido, dni, email,
         telefono: tel,
         payload,
       }),

@@ -436,12 +436,14 @@ class PublicSide
 
     $monto    = floatval($_POST['monto']    ?? 0);
     $nombre   = sanitize_text_field($_POST['nombre']   ?? '');
+    $apellido = sanitize_text_field($_POST['apellido'] ?? '');
+    $dni      = sanitize_text_field($_POST['dni']      ?? '');
     $email    = sanitize_email($_POST['email']    ?? '');
     $telefono = sanitize_text_field($_POST['telefono'] ?? '');
     $payload  = sanitize_textarea_field(stripslashes($_POST['payload'] ?? ''));
 
-    if ($monto <= 0 || !$nombre || !is_email($email)) {
-      wp_send_json_error(['message' => 'Nombre y email son obligatorios.'], 400);
+    if ($monto <= 0 || !$nombre || !$apellido || !$dni || !is_email($email)) {
+      wp_send_json_error(['message' => 'Nombre, apellido, DNI y email son obligatorios.'], 400);
       return;
     }
 
@@ -485,6 +487,8 @@ class PublicSide
 
     set_transient('aba_pago_' . $oid, [
       'nombre'   => $nombre,
+      'apellido' => $apellido,
+      'dni'      => $dni,
       'email'    => $email,
       'telefono' => $telefono,
       'monto'    => $monto,
@@ -528,12 +532,14 @@ class PublicSide
   {
     $payload = $datos['payload'] ? json_decode($datos['payload'], true) : [];
     $resumen = $payload['resumen'] ?? '';
+    $nombre_completo = trim(($datos['nombre'] ?? '') . ' ' . ($datos['apellido'] ?? ''));
 
     $text = "Seña cobrada vía Fiserv/Postnet\n"
           . "OID: {$oid}\n"
           . "Approval code: {$approval_code}\n"
           . "Monto seña: $" . number_format($datos['monto'], 2, ',', '.') . "\n\n"
-          . "Cliente: {$datos['nombre']}\n"
+          . "Cliente: {$nombre_completo}\n"
+          . "DNI: " . ($datos['dni'] ?? '') . "\n"
           . "Email: {$datos['email']}\n"
           . "Teléfono: {$datos['telefono']}\n";
 
@@ -544,7 +550,7 @@ class PublicSide
     $post_id = wp_insert_post([
       'post_type'    => self::CPT_CONSULTA,
       'post_status'  => 'publish',
-      'post_title'   => "Reserva {$oid} — {$datos['nombre']}",
+      'post_title'   => "Reserva {$oid} — {$nombre_completo}",
       'post_content' => $text,
     ], true);
 
@@ -553,7 +559,9 @@ class PublicSide
     update_post_meta($post_id, 'aba_oid',           $oid);
     update_post_meta($post_id, 'aba_approval_code', $approval_code);
     update_post_meta($post_id, 'aba_monto_sena',    $datos['monto']);
-    update_post_meta($post_id, 'aba_nombre',        $datos['nombre']);
+    update_post_meta($post_id, 'aba_nombre',        $datos['nombre'] ?? '');
+    update_post_meta($post_id, 'aba_apellido',      $datos['apellido'] ?? '');
+    update_post_meta($post_id, 'aba_dni',           $datos['dni'] ?? '');
     update_post_meta($post_id, 'aba_email',         $datos['email']);
     update_post_meta($post_id, 'aba_telefono',      $datos['telefono']);
 
@@ -561,9 +569,86 @@ class PublicSide
       update_post_meta($post_id, 'aba_payload', wp_json_encode($payload));
     }
 
-    $this->enviar_emails_reserva($post_id, $oid, $datos, $resumen, $approval_code);
+    // Llamar al backend para crear la reserva en el sistema
+    $id_reserva = $this->llamar_api_reservas($oid, $datos, $approval_code, $payload);
+    if ($id_reserva) {
+      update_post_meta($post_id, 'aba_id_reserva_backend', $id_reserva);
+    }
 
-    return $post_id;
+    $display_id = $id_reserva ?? $post_id;
+    $this->enviar_emails_reserva($display_id, $oid, $datos, $resumen, $approval_code);
+
+    return $display_id;
+  }
+
+  private function llamar_api_reservas(string $oid, array $datos, string $approval_code, array $payload): ?int
+  {
+    if (empty($payload['id_autos'])) return null;
+
+    $api_key = get_option('aba_reservas_api_key', '');
+    if (!$api_key) return null;
+
+    $body = [
+      'cliente' => [
+        'dni'      => $datos['dni']      ?? '',
+        'nombre'   => $datos['nombre']   ?? '',
+        'apellido' => $datos['apellido'] ?? '',
+        'mail'     => $datos['email'],
+        'telefono' => $datos['telefono'],
+      ],
+      'reserva' => [
+        'id_autos'            => intval($payload['id_autos']),
+        'fecha_retiro'        => $payload['fecha_retiro']        ?? '',
+        'hora_retiro'         => intval($payload['hora_retiro']  ?? 9),
+        'fecha_devolucion'    => $payload['fecha_devolucion']    ?? '',
+        'hora_devolucion'     => intval($payload['hora_devolucion'] ?? 9),
+        'sucursal_retiro'     => $payload['sucursal_retiro']     ?? '',
+        'sucursal_devolucion' => $payload['sucursal_devolucion'] ?? $payload['sucursal_retiro'] ?? '',
+        'tarifa_total'        => floatval($payload['tarifa_total']    ?? 0),
+        'dias_cobrables'      => intval($payload['dias_cobrables']   ?? 0),
+        'km_libres'           => $payload['km_libres']           ?? '',
+        'categoria'           => $payload['categoria']           ?? '',
+        'adicionales'         => $payload['adicionales']         ?? [],
+        'cobertura'           => $payload['cobertura']           ?? null,
+      ],
+      'pago_sena' => [
+        'importe'             => floatval($datos['monto']),
+        'fecha'               => wp_date('Y-m-d'),
+        'tipo_pago'           => 'Tarjeta',
+        'moneda'              => 'ARS',
+        'cuotas'              => 1,
+        'concepto'            => 'Seña reserva web',
+        'tipo_cambio'         => 1,
+        'referencia_externa'  => $oid,
+        'codigo_autorizacion' => $approval_code,
+      ],
+      'origen' => 'web',
+    ];
+
+    $response = wp_remote_post('https://aba.benvert.com.ar/api/reservas', [
+      'headers' => [
+        'X-API-Key'    => $api_key,
+        'Content-Type' => 'application/json',
+        'Accept'       => 'application/json',
+      ],
+      'body'    => wp_json_encode($body),
+      'timeout' => 20,
+    ]);
+
+    if (is_wp_error($response)) {
+      error_log('[aba_reservas] POST /api/reservas error: ' . $response->get_error_message());
+      return null;
+    }
+
+    $code = wp_remote_retrieve_response_code($response);
+    if ($code !== 201) {
+      error_log('[aba_reservas] POST /api/reservas HTTP ' . $code . ': ' . wp_remote_retrieve_body($response));
+      return null;
+    }
+
+    $body_r = json_decode(wp_remote_retrieve_body($response), true);
+    $id = intval($body_r['id_reserva'] ?? 0);
+    return $id > 0 ? $id : null;
   }
 
   private function enviar_emails_reserva(int $post_id, string $oid, array $datos, string $resumen, string $approval_code): void

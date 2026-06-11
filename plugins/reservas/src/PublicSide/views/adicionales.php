@@ -257,6 +257,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
 
 <script>
 window.abaCotizacion = <?php echo wp_json_encode([
+  'id_autos'    => intval($params['id_autos']),
   'dias'        => $dias,
   'tarifa'      => $tar,
   'sena_pct'    => isset($tar['sena_pct']) ? intval($tar['sena_pct']) : null,
@@ -286,9 +287,19 @@ window.abaCotizacion = <?php echo wp_json_encode([
         <p id="aba-sena-modal-monto" style="font-size:26px;font-weight:700;color:#1A202C;margin:0;"></p>
       </div>
 
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Nombre *</label>
+          <input id="aba-campo-nombre" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Apellido *</label>
+          <input id="aba-campo-apellido" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
+        </div>
+      </div>
       <div style="margin-bottom:14px;">
-        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Nombre completo *</label>
-        <input id="aba-campo-nombre" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">DNI *</label>
+        <input id="aba-campo-dni" type="text" inputmode="numeric" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
       </div>
       <div style="margin-bottom:14px;">
         <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Email *</label>
