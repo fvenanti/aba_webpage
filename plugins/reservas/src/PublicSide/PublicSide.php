@@ -460,9 +460,28 @@ class PublicSide
     $chargetotal = number_format($monto, 2, '.', '');
     $currency    = '032'; // ARS
 
-    // Fiserv IPG hash: SHA1 de los campos, luego SHA256 concatenando el secret
-    $inner = sha1($store_id . $txndatetime . $chargetotal . $currency);
-    $hash  = hash('sha256', $inner . $shared_secret);
+    $result_page = get_page_by_path('pago-resultado');
+    $result_url  = $result_page ? get_permalink($result_page->ID) : home_url('/pago-resultado/');
+
+    // Fiserv IPG HMAC-SHA256: todos los campos ordenados alfa, valores con | entre ellos
+    $fields = [
+      'bname'              => $nombre,
+      'chargetotal'        => $chargetotal,
+      'currency'           => $currency,
+      'email'              => $email,
+      'hash_algorithm'     => 'HMACSHA256',
+      'oid'                => $oid,
+      'phone'              => $telefono,
+      'responseFailURL'    => add_query_arg(['oid' => $oid, 'result' => 'fail'], $result_url),
+      'responseSuccessURL' => add_query_arg(['oid' => $oid, 'result' => 'ok'],   $result_url),
+      'storename'          => $store_id,
+      'timezone'           => 'America/Argentina/Buenos_Aires',
+      'txndatetime'        => $txndatetime,
+      'txntype'            => 'sale',
+    ];
+    ksort($fields);
+    $hash = base64_encode(hash_hmac('sha256', implode('|', $fields), $shared_secret, true));
+    $fields['hashExtended'] = $hash;
 
     set_transient('aba_pago_' . $oid, [
       'nombre'   => $nombre,
@@ -472,27 +491,9 @@ class PublicSide
       'payload'  => $payload,
     ], 30 * MINUTE_IN_SECONDS);
 
-    $result_page = get_page_by_path('pago-resultado');
-    $result_url  = $result_page ? get_permalink($result_page->ID) : home_url('/pago-resultado/');
-
     wp_send_json_success([
       'url'    => $gateway_url,
-      'fields' => [
-        'storename'          => $store_id,
-        'txntype'            => 'sale',
-        'timezone'           => 'America/Argentina/Buenos_Aires',
-        'txndatetime'        => $txndatetime,
-        'hash_algorithm'     => 'SHA256',
-        'hash'               => $hash,
-        'chargetotal'        => $chargetotal,
-        'currency'           => $currency,
-        'responseSuccessURL' => add_query_arg(['oid' => $oid, 'result' => 'ok'],   $result_url),
-        'responseFailURL'    => add_query_arg(['oid' => $oid, 'result' => 'fail'], $result_url),
-        'oid'                => $oid,
-        'bname'              => $nombre,
-        'email'              => $email,
-        'phone'              => $telefono,
-      ],
+      'fields' => $fields,
     ]);
   }
 
