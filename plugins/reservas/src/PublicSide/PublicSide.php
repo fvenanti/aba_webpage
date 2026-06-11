@@ -14,8 +14,12 @@ class PublicSide
     add_shortcode('aba_reserva_form', [$this, 'shortcode_form_reserva']);
     add_shortcode('aba_reserva_resultados', [$this, 'shortcode_resultados_reserva']);
     add_shortcode('aba_cotizacion', [$this, 'shortcode_cotizacion']);
+    add_shortcode('aba_pago_resultado', [$this, 'shortcode_pago_resultado']);
 
     add_action('init', [$this, 'register_cpt']);
+
+    add_action('wp_ajax_aba_fiserv_init',        [$this, 'ajax_fiserv_init']);
+    add_action('wp_ajax_nopriv_aba_fiserv_init', [$this, 'ajax_fiserv_init']);
 
     add_action('wp_ajax_aba_reservas_create_consulta', [$this, 'ajax_create_consulta']);
     add_action('wp_ajax_nopriv_aba_reservas_create_consulta', [$this, 'ajax_create_consulta']);
@@ -424,6 +428,130 @@ class PublicSide
       'error_code' => $result['error'] ?? null,
       'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal', 'ubicacion_raw'),
     ]);
+  }
+
+  public function ajax_fiserv_init(): void
+  {
+    check_ajax_referer('aba_reservas', 'nonce');
+
+    $monto    = floatval($_POST['monto']    ?? 0);
+    $nombre   = sanitize_text_field($_POST['nombre']   ?? '');
+    $email    = sanitize_email($_POST['email']    ?? '');
+    $telefono = sanitize_text_field($_POST['telefono'] ?? '');
+    $payload  = sanitize_textarea_field(stripslashes($_POST['payload'] ?? ''));
+
+    if ($monto <= 0 || !$nombre || !is_email($email)) {
+      wp_send_json_error(['message' => 'Nombre y email son obligatorios.'], 400);
+      return;
+    }
+
+    $store_id      = get_option('aba_fiserv_store_id', '');
+    $shared_secret = get_option('aba_fiserv_shared_secret', '');
+    $gateway_url   = get_option('aba_fiserv_url', 'https://test.ipg-online.com/connect/gateway/processing');
+
+    if (!$store_id || !$shared_secret) {
+      wp_send_json_error(['message' => 'Pasarela no configurada.'], 500);
+      return;
+    }
+
+    $oid         = 'ABA-' . strtoupper(uniqid());
+    $tz          = new \DateTimeZone('America/Argentina/Buenos_Aires');
+    $txndatetime = (new \DateTime('now', $tz))->format('Y:m:d-H:i:s');
+    $chargetotal = number_format($monto, 2, '.', '');
+    $currency    = '032'; // ARS
+
+    $hash = hash('sha256', $store_id . $txndatetime . $chargetotal . $currency . $shared_secret);
+
+    set_transient('aba_pago_' . $oid, [
+      'nombre'   => $nombre,
+      'email'    => $email,
+      'telefono' => $telefono,
+      'monto'    => $monto,
+      'payload'  => $payload,
+    ], 30 * MINUTE_IN_SECONDS);
+
+    $result_page = get_page_by_path('pago-resultado');
+    $result_url  = $result_page ? get_permalink($result_page->ID) : home_url('/pago-resultado/');
+
+    wp_send_json_success([
+      'url'    => $gateway_url,
+      'fields' => [
+        'storename'          => $store_id,
+        'txntype'            => 'sale',
+        'timezone'           => 'America/Argentina/Buenos_Aires',
+        'txndatetime'        => $txndatetime,
+        'hash_algorithm'     => 'SHA256',
+        'hash'               => $hash,
+        'chargetotal'        => $chargetotal,
+        'currency'           => $currency,
+        'responseSuccessURL' => add_query_arg(['oid' => $oid, 'result' => 'ok'],   $result_url),
+        'responseFailURL'    => add_query_arg(['oid' => $oid, 'result' => 'fail'], $result_url),
+        'oid'                => $oid,
+        'bname'              => $nombre,
+        'email'              => $email,
+        'phone'              => $telefono,
+      ],
+    ]);
+  }
+
+  public function shortcode_pago_resultado(): string
+  {
+    $result = sanitize_text_field($_GET['result'] ?? '');
+    $oid    = sanitize_text_field($_GET['oid']    ?? '');
+
+    $aprobado = false;
+
+    if ($result === 'ok' && $oid) {
+      $datos = get_transient('aba_pago_' . $oid);
+
+      if ($datos && !get_transient('aba_pago_creado_' . $oid)) {
+        $approval_code = sanitize_text_field($_GET['approval_code'] ?? '');
+        $this->crear_reserva_desde_pago($oid, $datos, $approval_code);
+        delete_transient('aba_pago_' . $oid);
+        set_transient('aba_pago_creado_' . $oid, true, 24 * HOUR_IN_SECONDS);
+      }
+
+      $aprobado = true;
+    }
+
+    return $this->render_view('pago-resultado.php', compact('aprobado', 'oid'));
+  }
+
+  private function crear_reserva_desde_pago(string $oid, array $datos, string $approval_code): void
+  {
+    $payload = $datos['payload'] ? json_decode($datos['payload'], true) : [];
+
+    $text = "Seña cobrada vía Fiserv/Postnet\n"
+          . "OID: {$oid}\n"
+          . "Approval code: {$approval_code}\n"
+          . "Monto seña: $" . number_format($datos['monto'], 2, ',', '.') . "\n\n"
+          . "Cliente: {$datos['nombre']}\n"
+          . "Email: {$datos['email']}\n"
+          . "Teléfono: {$datos['telefono']}\n";
+
+    if (!empty($payload['resumen'])) {
+      $text .= "\n--- Detalle reserva ---\n" . $payload['resumen'];
+    }
+
+    $post_id = wp_insert_post([
+      'post_type'    => self::CPT_CONSULTA,
+      'post_status'  => 'publish',
+      'post_title'   => "Reserva {$oid} — {$datos['nombre']}",
+      'post_content' => $text,
+    ], true);
+
+    if (is_wp_error($post_id)) return;
+
+    update_post_meta($post_id, 'aba_oid',           $oid);
+    update_post_meta($post_id, 'aba_approval_code', $approval_code);
+    update_post_meta($post_id, 'aba_monto_sena',    $datos['monto']);
+    update_post_meta($post_id, 'aba_nombre',        $datos['nombre']);
+    update_post_meta($post_id, 'aba_email',         $datos['email']);
+    update_post_meta($post_id, 'aba_telefono',      $datos['telefono']);
+
+    if ($payload) {
+      update_post_meta($post_id, 'aba_payload', wp_json_encode($payload));
+    }
   }
 
   private function obtener_cotizacion(int $id_autos, string $inicio, string $fin, int $hora_inicio, int $hora_fin, string $sucursal): array

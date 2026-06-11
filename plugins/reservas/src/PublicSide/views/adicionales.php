@@ -268,4 +268,71 @@ window.abaCotizacion = <?php echo wp_json_encode([
   'waNumber'    => $WA_NUMBER,
 ]); ?>;
 </script>
+
+<!-- ════ MODAL PAGO ════ -->
+<div id="aba-pago-modal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);">
+  <div style="position:relative;margin:4vh auto;max-width:460px;width:92%;background:#fff;border-radius:16px;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;">
+
+    <button id="aba-pago-cerrar" type="button"
+      style="position:absolute;top:10px;right:14px;font-size:26px;line-height:1;background:none;border:none;cursor:pointer;color:#90A3BF;z-index:10;">×</button>
+
+    <!-- PASO 1: datos del cliente -->
+    <div id="aba-paso-datos" style="padding:32px 24px 28px;overflow-y:auto;">
+      <h3 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 4px;">Confirmar reserva</h3>
+      <p style="font-size:13px;color:#90A3BF;margin:0 0 20px;">Completá tus datos para pagar la seña</p>
+
+      <div style="background:#f0f7e8;border-radius:10px;padding:14px 18px;margin-bottom:24px;">
+        <p style="font-size:11px;font-weight:700;color:#679938;text-transform:uppercase;letter-spacing:.05em;margin:0 0 4px;">Seña a pagar</p>
+        <p id="aba-sena-modal-monto" style="font-size:26px;font-weight:700;color:#1A202C;margin:0;"></p>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Nombre completo *</label>
+        <input id="aba-campo-nombre" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Email *</label>
+        <input id="aba-campo-email" type="email" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Teléfono</label>
+        <input id="aba-campo-tel" type="tel" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
+      </div>
+
+      <p id="aba-datos-error" style="display:none;color:#E53E3E;font-size:12px;margin-bottom:12px;"></p>
+      <button id="aba-datos-submit" type="button"
+        style="width:100%;padding:13px;background:#679938;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;">
+        Ir al pago →
+      </button>
+    </div>
+
+    <!-- PASO 2: iframe Fiserv -->
+    <div id="aba-paso-pago" style="display:none;flex-direction:column;flex:1;min-height:0;">
+      <div style="padding:12px 20px;border-bottom:1px solid #F0F0F0;font-size:13px;color:#596780;">
+        Ingresá los datos de tu tarjeta
+      </div>
+      <iframe id="aba-fiserv-iframe" name="aba-fiserv-frame"
+        style="width:100%;height:520px;border:none;display:block;flex:1;"></iframe>
+    </div>
+
+    <!-- PASO 3: resultado -->
+    <div id="aba-paso-resultado" style="display:none;padding:48px 32px;text-align:center;">
+      <div id="aba-res-ok" style="display:none;">
+        <div style="width:64px;height:64px;background:#f0f7e8;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:#679938;">✓</div>
+        <h3 style="font-size:20px;font-weight:700;color:#1A202C;margin:0 0 10px;">¡Seña recibida!</h3>
+        <p style="color:#596780;font-size:14px;line-height:1.6;margin:0;">Te enviamos la confirmación por email.<br>Nos vemos en la fecha del retiro.</p>
+      </div>
+      <div id="aba-res-error" style="display:none;">
+        <div style="width:64px;height:64px;background:#FFF5F5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:#E53E3E;">✗</div>
+        <h3 style="font-size:20px;font-weight:700;color:#1A202C;margin:0 0 10px;">Error en el pago</h3>
+        <p style="color:#596780;font-size:14px;line-height:1.6;margin:0 0 20px;">No se pudo procesar el pago.</p>
+        <button id="aba-reintentar" type="button"
+          style="padding:10px 24px;background:#679938;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+          Intentar de nuevo
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
 <?php endif; ?>

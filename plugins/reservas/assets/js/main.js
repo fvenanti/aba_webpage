@@ -321,27 +321,144 @@ function initAdicionalesPage(data) {
     });
   });
 
-  // Continuar (placeholder → WhatsApp por ahora)
+  // ── CONTINUAR → Fiserv Connect ──────────────────────────────────────
   const continuar = document.getElementById("aba-continuar");
-  if (continuar) {
+  const modal     = document.getElementById("aba-pago-modal");
+
+  function showStep(id) {
+    ["aba-paso-datos", "aba-paso-pago", "aba-paso-resultado"].forEach((s) => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = "none";
+    });
+    const target = document.getElementById(id);
+    if (target) target.style.display = id === "aba-paso-pago" ? "flex" : "block";
+  }
+
+  if (continuar && modal) {
     continuar.addEventListener("click", () => {
-      const { rows } = calcExtras();
+      const { rows, totalExtra } = calcExtras();
+      const grandTarjeta = data.tarifa.total_tarjeta + totalExtra;
+      const senaMonto = data.sena_pct
+        ? Math.round(grandTarjeta * data.sena_pct / 100)
+        : grandTarjeta;
+
+      const montoEl = document.getElementById("aba-sena-modal-monto");
+      if (montoEl) montoEl.textContent = fmt(senaMonto);
+
       const v = data.vehiculo;
       const r = data.reserva;
-      let text =
-        `Hola! Quiero confirmar esta reserva:\n` +
-        `• Vehículo: ${v.MODELO} (Cat. ${v["Categoría"]})\n` +
-        `• Retiro: ${r.sucursal_retiro} — ${r.fecha_retiro} ${r.hora_retiro}\n` +
-        `• Devolución: ${r.sucursal_devolucion} — ${r.fecha_devolucion} ${r.hora_devolucion}\n`;
-      if (rows.length) {
-        text += `\nExtras seleccionados:\n` + rows.map((x) => `  - ${x.nombre}`).join("\n");
-      }
-      const { totalExtra } = calcExtras();
-      const total = data.tarifa.total_tarjeta + totalExtra;
-      text += `\n\nTotal estimado: ${fmt(total)}`;
-      window.open(`https://wa.me/${data.waNumber}?text=${encodeURIComponent(text)}`, "_blank");
+      continuar.dataset.senaMonto = senaMonto;
+      continuar.dataset.payload = JSON.stringify({
+        resumen:
+          `Vehículo: ${v.MODELO} (Cat. ${v["Categoría"]})\n`
+          + `Retiro: ${r.sucursal_retiro} — ${r.fecha_retiro} ${(r.hora_retiro || "").substring(0, 5)}\n`
+          + `Devolución: ${r.sucursal_devolucion} — ${r.fecha_devolucion} ${(r.hora_devolucion || "").substring(0, 5)}\n`
+          + `Días: ${data.dias}\n`
+          + (rows.length ? `Extras: ${rows.map((x) => x.nombre).join(", ")}\n` : "")
+          + `Total tarjeta: ${fmt(grandTarjeta)}\n`
+          + `Seña: ${fmt(senaMonto)}`,
+      });
+
+      modal.style.display = "block";
+      showStep("aba-paso-datos");
     });
   }
+
+  // Cerrar modal
+  document.getElementById("aba-pago-cerrar")?.addEventListener("click", () => {
+    if (modal) modal.style.display = "none";
+  });
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  });
+
+  // Reintentar
+  document.getElementById("aba-reintentar")?.addEventListener("click", () => {
+    document.getElementById("aba-res-error").style.display = "none";
+    showStep("aba-paso-datos");
+  });
+
+  // Submit datos del cliente → AJAX → iframe Fiserv
+  document.getElementById("aba-datos-submit")?.addEventListener("click", () => {
+    const nombre = document.getElementById("aba-campo-nombre")?.value.trim() || "";
+    const email  = document.getElementById("aba-campo-email")?.value.trim()  || "";
+    const tel    = document.getElementById("aba-campo-tel")?.value.trim()    || "";
+    const errEl  = document.getElementById("aba-datos-error");
+
+    if (!nombre || !email) {
+      errEl.textContent = "Nombre y email son obligatorios.";
+      errEl.style.display = "block";
+      return;
+    }
+    errEl.style.display = "none";
+
+    const btn = document.getElementById("aba-datos-submit");
+    btn.textContent = "Procesando…";
+    btn.disabled = true;
+
+    const monto   = parseFloat(continuar?.dataset.senaMonto || 0);
+    const payload = continuar?.dataset.payload || "";
+
+    fetch(window.abaReservas.ajaxUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        action: "aba_fiserv_init",
+        nonce:  window.abaReservas.nonce,
+        monto, nombre, email,
+        telefono: tel,
+        payload,
+      }),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        btn.textContent = "Ir al pago →";
+        btn.disabled = false;
+
+        if (!res.success) {
+          errEl.textContent = res.data?.message || "Error al iniciar el pago.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        const { url, fields } = res.data;
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = url;
+        form.target = "aba-fiserv-frame";
+        form.style.display = "none";
+        Object.entries(fields).forEach(([k, v]) => {
+          const inp = document.createElement("input");
+          inp.type = "hidden"; inp.name = k; inp.value = v;
+          form.appendChild(inp);
+        });
+        document.body.appendChild(form);
+        showStep("aba-paso-pago");
+        form.submit();
+        form.remove();
+      })
+      .catch(() => {
+        btn.textContent = "Ir al pago →";
+        btn.disabled = false;
+        errEl.textContent = "Error de conexión. Intentá de nuevo.";
+        errEl.style.display = "block";
+      });
+  });
+
+  // Resultado desde iframe (postMessage de pago-resultado.php)
+  window.addEventListener("message", (e) => {
+    if (e.data?.type !== "aba-pago-resultado") return;
+    showStep("aba-paso-resultado");
+    const okEl  = document.getElementById("aba-res-ok");
+    const errEl = document.getElementById("aba-res-error");
+    if (e.data.aprobado) {
+      if (okEl)  okEl.style.display  = "block";
+      if (errEl) errEl.style.display = "none";
+    } else {
+      if (okEl)  okEl.style.display  = "none";
+      if (errEl) errEl.style.display = "block";
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
