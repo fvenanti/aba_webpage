@@ -278,7 +278,16 @@ class PublicSide
     }
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
-    return is_array($body) ? ($body['vehiculos'] ?? []) : [];
+    if (!is_array($body)) return [];
+
+    $api_base = 'https://aba.benvert.com.ar';
+    $vehiculos = $body['vehiculos'] ?? [];
+    foreach ($vehiculos as &$v) {
+      if (!empty($v['Imagen']) && str_starts_with($v['Imagen'], '/')) {
+        $v['Imagen'] = $api_base . $v['Imagen'];
+      }
+    }
+    return $vehiculos;
   }
 
   public function template_include(string $template): string
