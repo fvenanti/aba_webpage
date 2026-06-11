@@ -460,7 +460,9 @@ class PublicSide
     $chargetotal = number_format($monto, 2, '.', '');
     $currency    = '032'; // ARS
 
-    $hash = hash('sha256', $store_id . $txndatetime . $chargetotal . $currency . $shared_secret);
+    // Fiserv IPG hash: SHA1 de los campos, luego SHA256 concatenando el secret
+    $inner = sha1($store_id . $txndatetime . $chargetotal . $currency);
+    $hash  = hash('sha256', $inner . $shared_secret);
 
     set_transient('aba_pago_' . $oid, [
       'nombre'   => $nombre,

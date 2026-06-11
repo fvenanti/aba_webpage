@@ -425,7 +425,7 @@ function initAdicionalesPage(data) {
         const form = document.createElement("form");
         form.method = "POST";
         form.action = url;
-        form.target = "aba-fiserv-frame";
+        form.target = "_top";
         form.style.display = "none";
         Object.entries(fields).forEach(([k, v]) => {
           const inp = document.createElement("input");
@@ -433,8 +433,7 @@ function initAdicionalesPage(data) {
           form.appendChild(inp);
         });
         document.body.appendChild(form);
-        showStep("aba-paso-pago");
-        form.submit();
+        form.submit(); // redirect página completa a Fiserv
         form.remove();
       })
       .catch(() => {
