@@ -503,26 +503,31 @@ class PublicSide
     $oid    = sanitize_text_field($_GET['oid']    ?? '');
 
     $aprobado = false;
+    $post_id  = null;
 
     if ($result === 'ok' && $oid) {
       $datos = get_transient('aba_pago_' . $oid);
 
       if ($datos && !get_transient('aba_pago_creado_' . $oid)) {
-        $approval_code = sanitize_text_field($_GET['approval_code'] ?? '');
-        $this->crear_reserva_desde_pago($oid, $datos, $approval_code);
+        $approval_code = sanitize_text_field($_REQUEST['approval_code'] ?? '');
+        $post_id = $this->crear_reserva_desde_pago($oid, $datos, $approval_code);
         delete_transient('aba_pago_' . $oid);
-        set_transient('aba_pago_creado_' . $oid, true, 24 * HOUR_IN_SECONDS);
+        set_transient('aba_pago_creado_' . $oid, $post_id ?: true, 24 * HOUR_IN_SECONDS);
+      } else {
+        $post_id = get_transient('aba_pago_creado_' . $oid);
+        if (!is_int($post_id)) $post_id = null;
       }
 
       $aprobado = true;
     }
 
-    return $this->render_view('pago-resultado.php', compact('aprobado', 'oid'));
+    return $this->render_view('pago-resultado.php', compact('aprobado', 'oid', 'post_id'));
   }
 
-  private function crear_reserva_desde_pago(string $oid, array $datos, string $approval_code): void
+  private function crear_reserva_desde_pago(string $oid, array $datos, string $approval_code): ?int
   {
     $payload = $datos['payload'] ? json_decode($datos['payload'], true) : [];
+    $resumen = $payload['resumen'] ?? '';
 
     $text = "Seña cobrada vía Fiserv/Postnet\n"
           . "OID: {$oid}\n"
@@ -532,8 +537,8 @@ class PublicSide
           . "Email: {$datos['email']}\n"
           . "Teléfono: {$datos['telefono']}\n";
 
-    if (!empty($payload['resumen'])) {
-      $text .= "\n--- Detalle reserva ---\n" . $payload['resumen'];
+    if ($resumen) {
+      $text .= "\n--- Detalle reserva ---\n" . $resumen;
     }
 
     $post_id = wp_insert_post([
@@ -543,7 +548,7 @@ class PublicSide
       'post_content' => $text,
     ], true);
 
-    if (is_wp_error($post_id)) return;
+    if (is_wp_error($post_id)) return null;
 
     update_post_meta($post_id, 'aba_oid',           $oid);
     update_post_meta($post_id, 'aba_approval_code', $approval_code);
@@ -555,6 +560,51 @@ class PublicSide
     if ($payload) {
       update_post_meta($post_id, 'aba_payload', wp_json_encode($payload));
     }
+
+    $this->enviar_emails_reserva($post_id, $oid, $datos, $resumen, $approval_code);
+
+    return $post_id;
+  }
+
+  private function enviar_emails_reserva(int $post_id, string $oid, array $datos, string $resumen, string $approval_code): void
+  {
+    $site_name  = get_bloginfo('name');
+    $admin_mail = get_option('aba_reservas_email', get_option('admin_email'));
+    $headers    = ['Content-Type: text/html; charset=UTF-8'];
+    $monto_fmt  = '$ ' . number_format($datos['monto'], 0, ',', '.');
+    $resumen_html = nl2br(esc_html($resumen));
+
+    // Email al cliente
+    $subject_cliente = "Confirmación de reserva #{$post_id} — {$site_name}";
+    $body_cliente = "
+<p>Hola <strong>" . esc_html($datos['nombre']) . "</strong>,</p>
+<p>Tu seña fue procesada exitosamente. Tu reserva está confirmada.</p>
+<table cellpadding='4' style='border-collapse:collapse;font-family:sans-serif;font-size:14px'>
+  <tr><td><strong>N° de reserva</strong></td><td>#{$post_id}</td></tr>
+  <tr><td><strong>Monto abonado</strong></td><td>{$monto_fmt}</td></tr>"
+  . ($approval_code ? "<tr><td><strong>Código aprobación</strong></td><td>{$approval_code}</td></tr>" : '') . "
+</table>
+" . ($resumen_html ? "<hr><p><strong>Detalle:</strong><br>{$resumen_html}</p>" : '') . "
+<p>Nos vemos en la fecha del retiro.<br><strong>{$site_name}</strong></p>";
+
+    wp_mail($datos['email'], $subject_cliente, $body_cliente, $headers);
+
+    // Email al admin
+    $subject_admin = "Nueva reserva #{$post_id} — " . esc_html($datos['nombre']);
+    $body_admin = "
+<p>Se registró una nueva reserva con seña cobrada.</p>
+<table cellpadding='4' style='border-collapse:collapse;font-family:sans-serif;font-size:14px'>
+  <tr><td><strong>N° de reserva</strong></td><td>#{$post_id}</td></tr>
+  <tr><td><strong>OID</strong></td><td>{$oid}</td></tr>
+  <tr><td><strong>Approval</strong></td><td>" . ($approval_code ?: '—') . "</td></tr>
+  <tr><td><strong>Monto seña</strong></td><td>{$monto_fmt}</td></tr>
+  <tr><td><strong>Cliente</strong></td><td>" . esc_html($datos['nombre']) . "</td></tr>
+  <tr><td><strong>Email</strong></td><td>" . esc_html($datos['email']) . "</td></tr>
+  <tr><td><strong>Teléfono</strong></td><td>" . esc_html($datos['telefono']) . "</td></tr>
+</table>
+" . ($resumen_html ? "<hr><p><strong>Detalle:</strong><br>{$resumen_html}</p>" : '');
+
+    wp_mail($admin_mail, $subject_admin, $body_admin, $headers);
   }
 
   private function obtener_cotizacion(int $id_autos, string $inicio, string $fin, int $hora_inicio, int $hora_fin, string $sucursal): array
