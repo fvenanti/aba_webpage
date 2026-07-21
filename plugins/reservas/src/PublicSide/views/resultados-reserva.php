@@ -64,6 +64,10 @@ if (!empty($modelos)) {
 @media (min-width: 768px) {
   section.aba-results-layout { grid-template-columns: 220px 1fr !important; }
 }
+/* Expandir la página de resultados al ancho completo */
+.article .colLeft { width: 100% !important; }
+.article .colRight { display: none !important; }
+.article .newBox .box { width: 100% !important; max-width: 100% !important; padding: 0 24px !important; box-sizing: border-box; }
 </style>
 <section class="aba-results-layout grid gap-8">
   <!-- Filters -->
@@ -148,7 +152,7 @@ if (!empty($modelos)) {
     </div>
 
     <!-- Listado de modelos -->
-    <div class="grid grid-cols-1 gap-x-8 gap-y-12 md:grid-cols-3">
+    <div class="flex flex-col gap-5">
       <?php if (!empty($cars)): ?>
         <?php foreach ($cars as $car): ?>
           <article data-cat='<?php echo esc_attr($car['category']); ?>'
@@ -157,23 +161,31 @@ if (!empty($modelos)) {
             data-cash-label="<?php echo esc_attr($car['cash_price']); ?>"
             data-model="<?php echo esc_attr($car['model']); ?>"
             data-image="<?php echo esc_url($car['image']); ?>"
-            data-details="<?php echo $car['details']; ?>"
+            data-details="<?php echo esc_attr($car['details']); ?>"
             data-passengers="<?php echo esc_attr($car['passengers'] ?? ''); ?>"
             data-bags="<?php echo esc_attr($car['bags'] ?? ''); ?>"
             data-transmission="<?php echo esc_attr($car['transmission'] ?? ''); ?>"
             data-idautos="<?php echo esc_attr($car['id_autos']); ?>"
             data-senapct="<?php echo esc_attr($car['sena_pct'] ?? ''); ?>"
-            class="flex flex-col justify-between gap-5 p-6 bg-white rounded-lg">
-            <div class="">
-              <h3 class="text-xl! text-[#1A202C]! font-bold mb-1! mt-0! p-0!">
+            style="display:flex;align-items:center;gap:24px;padding:20px 24px;background:#fff;border-radius:12px;">
+
+            <!-- Imagen -->
+            <div style="flex-shrink:0;width:160px;text-align:center;">
+              <img src="<?php echo esc_url($car['image']); ?>"
+                   alt="<?php echo esc_html($car['model']); ?>"
+                   style="width:160px;height:100px;object-fit:contain;">
+            </div>
+
+            <!-- Info centro -->
+            <div style="flex:1;min-width:0;">
+              <p style="font-size:11px;font-weight:700;color:#679938;text-transform:uppercase;letter-spacing:.06em;margin:0 0 2px;">
                 Categoría <?php echo esc_html($car['category']); ?>
-              </h3>
-              <p class="text-sm text-[#90A3BF] font-bold mb-4!">
-                <?php echo esc_html($car['model']); ?>
               </p>
-              <img src="<?php echo esc_url($car['image']); ?>" alt="<?php echo esc_html($car['model']); ?>">
+              <h3 style="font-size:17px;font-weight:700;color:#1A202C;margin:0 0 10px;">
+                <?php echo esc_html($car['model']); ?>
+              </h3>
               <?php if ($car['passengers'] !== null || $car['bags'] !== null || $car['transmission'] !== null): ?>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
                 <?php
                 $badges = [
                   ['fa-user',     $car['passengers']  !== null ? (string) $car['passengers'] : '—'],
@@ -190,28 +202,49 @@ if (!empty($modelos)) {
               </div>
               <?php endif; ?>
             </div>
-            <div class="">
-              <p class="mb-5! text-xl! font-bold! text-[#1A202C]!"><?php echo esc_html($car['price']); ?></p>
-              <p class="text-sm! text-[#90A3BF]! mb-4!">
-                <?php echo esc_html($car['cash_price']); ?><br />
-                Tarifa abonando en efectivo
-              </p>
-              <?php if ($car['sena_pct'] !== null): ?>
-              <p style="font-size:12px;color:#679938;font-weight:600;margin-bottom:12px;">
-                Seña requerida: <?php echo $car['sena_pct']; ?>%
-                (<?php
-                  $sena_monto = round(aba_parse_ars($car['price']) * $car['sena_pct'] / 100);
-                  echo '$ ' . number_format($sena_monto, 0, ',', '.');
-                ?>)
-              </p>
-              <?php endif; ?>
-              <button id='toggleModal'
-                class='aba-open-modal btn font-semibold! rounded-sm! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0! w-full!'>Reservar ahora</button>
+
+            <!-- Botones con precio integrado -->
+            <?php
+              $precio_card      = aba_parse_ars($car['price']);
+              $sena_monto       = $car['sena_pct'] !== null ? round($precio_card * $car['sena_pct'] / 100) : null;
+              $precio_anticipado = round($precio_card * 0.80);
+            ?>
+            <div style="flex-shrink:0;min-width:200px;display:flex;flex-direction:column;gap:10px;">
+
+              <!-- Botón Reservar con seña -->
+              <button data-tipo="sena"
+                class='aba-open-modal'
+                style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+                       padding:14px 16px;background:#679938;color:#fff;border:none;border-radius:8px;
+                       cursor:pointer;width:100%;text-align:center;transition:background .2s;"
+                onmouseover="this.style.background='#50d0bf'" onmouseout="this.style.background='#679938'">
+                <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;opacity:.9;">Reservar con seña</span>
+                <span style="font-size:19px;font-weight:800;line-height:1.2;"><?php echo esc_html($car['price']); ?></span>
+                <?php if ($sena_monto !== null): ?>
+                <span style="font-size:10px;font-weight:600;opacity:.85;">
+                  Seña <?php echo $car['sena_pct']; ?>% · $ <?php echo number_format($sena_monto, 0, ',', '.'); ?>
+                </span>
+                <?php endif; ?>
+              </button>
+
+              <!-- Botón Pago anticipado -->
+              <button data-tipo="anticipado"
+                class='aba-open-modal'
+                style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+                       padding:14px 16px;background:#2B8A7A;color:#fff;border:none;border-radius:8px;
+                       cursor:pointer;width:100%;text-align:center;transition:background .2s;"
+                onmouseover="this.style.background='#236b5e'" onmouseout="this.style.background='#2B8A7A'">
+                <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;opacity:.9;">Pago anticipado</span>
+                <span style="font-size:19px;font-weight:800;line-height:1.2;">$ <?php echo number_format($precio_anticipado, 0, ',', '.'); ?></span>
+                <span style="font-size:10px;font-weight:600;opacity:.85;">Pago total · 20% dto. en tarifa</span>
+              </button>
+
             </div>
+
           </article>
         <?php endforeach; ?>
       <?php else: ?>
-        <p class="text-sm text-gray-600 col-span-full">
+        <p class="text-sm text-gray-600">
           No encontramos vehículos disponibles con los filtros seleccionados.
           Probá ajustando las fechas o categoría.
         </p>

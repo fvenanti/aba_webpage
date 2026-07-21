@@ -417,6 +417,19 @@ function initAdicionalesPage(data) {
     showStep("aba-paso-datos");
   });
 
+  // Habilitar botón solo cuando todos los campos obligatorios están completos
+  const camposObligatorios = ["aba-campo-nombre", "aba-campo-apellido", "aba-campo-dni", "aba-campo-email", "aba-campo-tel"];
+  const btnSubmit = document.getElementById("aba-datos-submit");
+  function actualizarBoton() {
+    const todosCompletos = camposObligatorios.every(id => document.getElementById(id)?.value.trim());
+    if (btnSubmit) {
+      btnSubmit.disabled = !todosCompletos;
+      btnSubmit.style.opacity = todosCompletos ? "1" : ".45";
+      btnSubmit.style.cursor  = todosCompletos ? "pointer" : "not-allowed";
+    }
+  }
+  camposObligatorios.forEach(id => document.getElementById(id)?.addEventListener("input", actualizarBoton));
+
   // Submit datos del cliente → AJAX → Fiserv redirect
   document.getElementById("aba-datos-submit")?.addEventListener("click", () => {
     const nombre   = document.getElementById("aba-campo-nombre")?.value.trim()   || "";
@@ -426,8 +439,8 @@ function initAdicionalesPage(data) {
     const tel      = document.getElementById("aba-campo-tel")?.value.trim()      || "";
     const errEl    = document.getElementById("aba-datos-error");
 
-    if (!nombre || !apellido || !dni || !email) {
-      errEl.textContent = "Nombre, apellido, DNI y email son obligatorios.";
+    if (!nombre || !apellido || !dni || !email || !tel) {
+      errEl.textContent = "Nombre, apellido, DNI, email y teléfono son obligatorios.";
       errEl.style.display = "block";
       return;
     }

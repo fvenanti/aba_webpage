@@ -63,8 +63,8 @@ class PublicSide
       self::CPT_CONSULTA,
       [
         'labels' => $labels,
-        'public' => true,
-        'publicly_queryable' => true,
+        'public' => false,
+        'publicly_queryable' => false,
         'exclude_from_search' => true,
         'show_ui' => true,
         'show_in_menu' => true,
@@ -86,6 +86,10 @@ class PublicSide
    */
   public function shortcode_form_reserva($atts = [], $content = null): string
   {
+    if (get_option('aba_reservas_disabled')) {
+      return '';
+    }
+
     // Podés definir la página de resultados vía options, ACF, etc.
     // De momento lo dejo como ejemplo hardcodeado:
     // $resultados_page_id = get_option('aba_reservas_resultados_page_id'); // o lo que uses
@@ -306,6 +310,10 @@ class PublicSide
   {
     check_ajax_referer('aba_reservas', 'nonce');
 
+    if (!$this->check_rate_limit('create_consulta', 5, 60)) {
+      wp_send_json_error(['msg' => 'Demasiadas solicitudes. Intentá en un momento.'], 429);
+    }
+
     $model = sanitize_text_field($_POST['model'] ?? '');
     $cat = sanitize_text_field($_POST['cat'] ?? '');
     $price_label = sanitize_text_field($_POST['priceLabel'] ?? '');
@@ -414,13 +422,14 @@ class PublicSide
    */
   public function shortcode_cotizacion(): string
   {
-    $id_autos      = intval($_GET['id_autos']     ?? 0);
-    $inicio        = sanitize_text_field($_GET['inicio']       ?? '');
-    $fin           = sanitize_text_field($_GET['fin']          ?? '');
-    $hora_inicio   = intval($_GET['hora_inicio']  ?? 9);
-    $hora_fin      = intval($_GET['hora_fin']      ?? 9);
-    $sucursal      = sanitize_text_field($_GET['sucursal']     ?? 'Bariloche');
-    $ubicacion_raw = strtolower(sanitize_text_field($_GET['ubicacion'] ?? ''));
+    $id_autos        = intval($_GET['id_autos']        ?? 0);
+    $inicio          = sanitize_text_field($_GET['inicio']          ?? '');
+    $fin             = sanitize_text_field($_GET['fin']             ?? '');
+    $hora_inicio     = intval($_GET['hora_inicio']     ?? 9);
+    $hora_fin        = intval($_GET['hora_fin']        ?? 9);
+    $sucursal        = sanitize_text_field($_GET['sucursal']        ?? 'Bariloche');
+    $ubicacion_raw   = strtolower(sanitize_text_field($_GET['ubicacion'] ?? ''));
+    $pago_anticipado = !empty($_GET['pago_anticipado']);
 
     if (!$id_autos || !$inicio || !$fin) {
       return $this->render_view('adicionales.php', [
@@ -435,7 +444,7 @@ class PublicSide
     return $this->render_view('adicionales.php', [
       'cotizacion' => $result['data'] ?? null,
       'error_code' => $result['error'] ?? null,
-      'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal', 'ubicacion_raw'),
+      'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal', 'ubicacion_raw', 'pago_anticipado'),
     ]);
   }
 
@@ -443,16 +452,95 @@ class PublicSide
   {
     check_ajax_referer('aba_reservas', 'nonce');
 
-    $monto    = floatval($_POST['monto']    ?? 0);
-    $nombre   = sanitize_text_field($_POST['nombre']   ?? '');
-    $apellido = sanitize_text_field($_POST['apellido'] ?? '');
-    $dni      = sanitize_text_field($_POST['dni']      ?? '');
-    $email    = sanitize_email($_POST['email']    ?? '');
-    $telefono = sanitize_text_field($_POST['telefono'] ?? '');
-    $payload  = sanitize_textarea_field(stripslashes($_POST['payload'] ?? ''));
+    if (!$this->check_rate_limit('fiserv_init', 3, 60)) {
+      wp_send_json_error(['msg' => 'Demasiadas solicitudes. Intentá en un momento.'], 429);
+    }
 
-    if ($monto <= 0 || !$nombre || !$apellido || !$dni || !is_email($email)) {
+    $nombre      = sanitize_text_field($_POST['nombre']   ?? '');
+    $apellido    = sanitize_text_field($_POST['apellido'] ?? '');
+    $dni         = sanitize_text_field($_POST['dni']      ?? '');
+    $email       = sanitize_email($_POST['email']         ?? '');
+    $telefono    = sanitize_text_field($_POST['telefono'] ?? '');
+    $payload_raw = sanitize_textarea_field(stripslashes($_POST['payload'] ?? ''));
+
+    if (!$nombre || !$apellido || !$dni || !is_email($email)) {
       wp_send_json_error(['message' => 'Nombre, apellido, DNI y email son obligatorios.'], 400);
+      return;
+    }
+
+    // [C-1] Validar payload y recalcular monto server-side (no confiar en $_POST['monto'])
+    $payload = json_decode($payload_raw, true);
+    if (!is_array($payload)) {
+      wp_send_json_error(['message' => 'Datos de reserva inválidos.'], 400);
+      return;
+    }
+
+    $id_autos     = intval($payload['id_autos']         ?? 0);
+    $fecha_retiro = sanitize_text_field($payload['fecha_retiro']     ?? '');
+    $fecha_dev    = sanitize_text_field($payload['fecha_devolucion'] ?? '');
+    $hora_ret     = intval($payload['hora_retiro']       ?? 9);
+    $hora_dev     = intval($payload['hora_devolucion']   ?? 9);
+    $sucursal     = sanitize_text_field($payload['sucursal_retiro']  ?? '');
+
+    if (!$id_autos || !$fecha_retiro || !$fecha_dev) {
+      wp_send_json_error(['message' => 'Datos de reserva incompletos.'], 400);
+      return;
+    }
+
+    $cotizacion = $this->obtener_cotizacion($id_autos, $fecha_retiro, $fecha_dev, $hora_ret, $hora_dev, $sucursal);
+    if (isset($cotizacion['error'])) {
+      wp_send_json_error(['message' => 'No se pudo verificar el precio. Intentá de nuevo.'], 500);
+      return;
+    }
+
+    $cot       = $cotizacion['data'];
+    $tar       = $cot['tarifa']  ?? [];
+    $dias      = intval($cot['dias'] ?? $cot['reserva']['dias_cobrables'] ?? 1);
+    $sena_pct  = floatval($tar['sena_pct'] ?? 35);
+    $base      = floatval($tar['total_tarjeta'] ?? 0);
+
+    // Sumar adicionales seleccionados verificando precios desde la API
+    $ads_api = [];
+    $claves_estadia_override = ['barras_portaequipaje', 'gps', 'silla_bebes'];
+    foreach ($cot['adicionales'] ?? [] as $ad) {
+      $clave_ad = $ad['clave'] ?? null;
+      $modo_ad  = (isset($clave_ad) && in_array($clave_ad, $claves_estadia_override, true))
+                  ? 'estadia'
+                  : ($ad['modo'] ?? 'total');
+      if ($clave_ad !== null) {
+        $ads_api[$clave_ad] = ['precio' => floatval($ad['precio'] ?? 0), 'modo' => $modo_ad];
+      }
+    }
+    $extras = 0.0;
+    foreach ($payload['adicionales'] ?? [] as $sel) {
+      $clave = sanitize_text_field($sel['clave'] ?? '');
+      $qty   = max(1, intval($sel['cantidad'] ?? 1));
+      if ($clave && isset($ads_api[$clave])) {
+        $extras += $ads_api[$clave]['precio'] * $qty * ($ads_api[$clave]['modo'] === 'dia' ? $dias : 1);
+      }
+    }
+
+    // Sumar cobertura seleccionada verificando precio desde la API
+    $cobs_api = [];
+    foreach ($cot['coberturas'] ?? [] as $cob) {
+      $cobs_api[$cob['clave']] = ['precio' => floatval($cob['precio'] ?? 0), 'modo' => $cob['modo'] ?? 'dia'];
+    }
+    $cob_sel = $payload['cobertura'] ?? null;
+    if (is_array($cob_sel) && isset($cob_sel['clave'], $cobs_api[$cob_sel['clave']])) {
+      $c = $cobs_api[$cob_sel['clave']];
+      $extras += $c['precio'] * ($c['modo'] === 'dia' ? $dias : 1);
+    }
+
+    $pago_anticipado = !empty($payload['pago_anticipado']);
+
+    if ($pago_anticipado) {
+      $monto = (int) round($base * 0.80 + $extras);
+    } else {
+      $monto = (int) round(($base + $extras) * $sena_pct / 100);
+    }
+
+    if ($monto <= 0) {
+      wp_send_json_error(['message' => $pago_anticipado ? 'Monto de pago inválido.' : 'Monto de seña inválido.'], 400);
       return;
     }
 
@@ -465,8 +553,9 @@ class PublicSide
       return;
     }
 
-    $oid         = 'ABA-' . strtoupper(uniqid());
-    $tz          = new \DateTimeZone('America/Argentina/Buenos_Aires');
+    // [C-3] OID criptográficamente aleatorio (reemplaza uniqid() que era predecible)
+    $oid         = 'ABA-' . strtoupper(bin2hex(random_bytes(10)));
+    $tz          = new \DateTimeZone('America/Buenos_Aires');
     $txndatetime = (new \DateTime('now', $tz))->format('Y:m:d-H:i:s');
     $chargetotal = number_format($monto, 2, '.', '');
     $currency    = '032'; // ARS
@@ -486,22 +575,25 @@ class PublicSide
       'responseFailURL'    => add_query_arg(['oid' => $oid, 'result' => 'fail'], $result_url),
       'responseSuccessURL' => add_query_arg(['oid' => $oid, 'result' => 'ok'],   $result_url),
       'storename'          => $store_id,
-      'timezone'           => 'America/Argentina/Buenos_Aires',
-      'txndatetime'        => $txndatetime,
-      'txntype'            => 'sale',
+      'authenticateTransaction'            => 'true',
+      'threeDSRequestorChallengeIndicator' => '01',
+      'timezone'                           => 'America/Buenos_Aires',
+      'txndatetime'                        => $txndatetime,
+      'txntype'                            => 'sale',
     ];
     ksort($fields);
     $hash = base64_encode(hash_hmac('sha256', implode('|', $fields), $shared_secret, true));
     $fields['hashExtended'] = $hash;
 
     set_transient('aba_pago_' . $oid, [
-      'nombre'   => $nombre,
-      'apellido' => $apellido,
-      'dni'      => $dni,
-      'email'    => $email,
-      'telefono' => $telefono,
-      'monto'    => $monto,
-      'payload'  => $payload,
+      'nombre'          => $nombre,
+      'apellido'        => $apellido,
+      'dni'             => $dni,
+      'email'           => $email,
+      'telefono'        => $telefono,
+      'monto'           => $monto,
+      'payload'         => $payload,
+      'pago_anticipado' => $pago_anticipado,
     ], 30 * MINUTE_IN_SECONDS);
 
     wp_send_json_success([
@@ -515,38 +607,96 @@ class PublicSide
     $result = sanitize_text_field($_GET['result'] ?? '');
     $oid    = sanitize_text_field($_GET['oid']    ?? '');
 
-    $aprobado = false;
-    $post_id  = null;
+    $aprobado   = false;
+    $id_reserva = null;
+    $api_ok     = false;
 
     if ($result === 'ok' && $oid) {
+      // [C-2] Verificar firma HMAC-SHA256 de Fiserv
+      // Usamos QUERY_STRING directamente para evitar que wp_magic_quotes() corrompa los valores
+      $shared_secret = get_option('aba_fiserv_shared_secret', '');
+      parse_str($_SERVER['QUERY_STRING'] ?? '', $raw_params);
+      $response_hash = $raw_params['response_hash'] ?? '';
+      if ($shared_secret && $response_hash) {
+        // Excluir: el hash en sí y 'result' (parámetro nuestro, no de Fiserv)
+        $fiserv_exclude = ['response_hash', 'result'];
+        $fields = array_filter(
+          $raw_params,
+          fn($k) => !in_array($k, $fiserv_exclude, true),
+          ARRAY_FILTER_USE_KEY
+        );
+        $fields = array_filter($fields, fn($v) => $v !== '' && $v !== null);
+        ksort($fields);
+        $computed = base64_encode(hash_hmac('sha256', implode('|', $fields), $shared_secret, true));
+        error_log('[aba_reservas C-2] OID=' . $oid . ' fields=' . implode(',', array_keys($fields)) . ' match=' . ($computed === $response_hash ? 'YES' : 'NO'));
+        if (!hash_equals($computed, $response_hash)) {
+          error_log('[aba_reservas C-2] Hash MISMATCH — bloqueando. OID=' . $oid);
+          return $this->render_view('pago-resultado.php', [
+            'aprobado'   => false,
+            'oid'        => $oid,
+            'id_reserva' => null,
+            'api_ok'     => false,
+          ]);
+        }
+      }
+
       $datos = get_transient('aba_pago_' . $oid);
 
       if ($datos && !get_transient('aba_pago_creado_' . $oid)) {
         $approval_code = sanitize_text_field($_REQUEST['approval_code'] ?? '');
-        $post_id = $this->crear_reserva_desde_pago($oid, $datos, $approval_code);
+        $ccbrand       = sanitize_text_field($_REQUEST['ccbrand']       ?? '');
+        [$id_reserva, $api_ok] = $this->crear_reserva_desde_pago($oid, $datos, $approval_code, $ccbrand);
         delete_transient('aba_pago_' . $oid);
-        set_transient('aba_pago_creado_' . $oid, $post_id ?: true, 24 * HOUR_IN_SECONDS);
+        // Guardar [id_reserva, api_ok] para si el cliente recarga la página
+        set_transient('aba_pago_creado_' . $oid, [$id_reserva, $api_ok], 24 * HOUR_IN_SECONDS);
       } else {
-        $post_id = get_transient('aba_pago_creado_' . $oid);
-        if (!is_int($post_id)) $post_id = null;
+        $guardado   = get_transient('aba_pago_creado_' . $oid);
+        $id_reserva = is_array($guardado) ? ($guardado[0] ?? null) : null;
+        $api_ok     = is_array($guardado) ? ($guardado[1] ?? false) : false;
       }
 
       $aprobado = true;
     }
 
-    return $this->render_view('pago-resultado.php', compact('aprobado', 'oid', 'post_id'));
+    return $this->render_view('pago-resultado.php', compact('aprobado', 'oid', 'id_reserva', 'api_ok'));
   }
 
-  private function crear_reserva_desde_pago(string $oid, array $datos, string $approval_code): ?int
+  /**
+   * Registra el pago en WordPress, llama a la API y envía los emails correspondientes.
+   * Devuelve [?int $id_reserva_backend, bool $api_ok].
+   * Si la API falla: $id_reserva_backend = null, $api_ok = false.
+   */
+  private function check_rate_limit(string $action, int $max = 5, int $window = 60): bool
   {
-    $payload = $datos['payload'] ? json_decode($datos['payload'], true) : [];
-    $resumen = $payload['resumen'] ?? '';
-    $nombre_completo = trim(($datos['nombre'] ?? '') . ' ' . ($datos['apellido'] ?? ''));
+    $ip  = md5($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $key = 'aba_rl_' . $action . '_' . $ip;
+    $count = (int) get_transient($key);
+    if ($count >= $max) return false;
+    set_transient($key, $count + 1, $window);
+    return true;
+  }
 
-    $text = "Seña cobrada vía Fiserv/Postnet\n"
+  private function ccbrand_to_tipo_pago(string $brand): string
+  {
+    return match (strtoupper(trim($brand))) {
+      'MASTER', 'MASTERCARD' => 'credito_master',
+      'AMEX', 'AMERICAN EXPRESS' => 'credito_amex',
+      default => 'credito_visa',
+    };
+  }
+
+  private function crear_reserva_desde_pago(string $oid, array $datos, string $approval_code, string $ccbrand = ''): array
+  {
+    $payload         = is_array($datos['payload']) ? $datos['payload'] : (json_decode($datos['payload'] ?? '', true) ?: []);
+    $resumen         = $payload['resumen'] ?? '';
+    $pago_anticipado = !empty($datos['pago_anticipado']) || !empty($payload['pago_anticipado']);
+    $nombre_completo = trim(($datos['nombre'] ?? '') . ' ' . ($datos['apellido'] ?? ''));
+    $tipo_pago_label = $pago_anticipado ? 'Pago anticipado (100% con 20% dto. en tarifa)' : 'Seña';
+
+    $text = ($pago_anticipado ? "PAGO ANTICIPADO cobrado vía Fiserv/Postnet\n" : "Seña cobrada vía Fiserv/Postnet\n")
           . "OID: {$oid}\n"
           . "Approval code: {$approval_code}\n"
-          . "Monto seña: $" . number_format($datos['monto'], 2, ',', '.') . "\n\n"
+          . "Monto {$tipo_pago_label}: $" . number_format($datos['monto'], 2, ',', '.') . "\n\n"
           . "Cliente: {$nombre_completo}\n"
           . "DNI: " . ($datos['dni'] ?? '') . "\n"
           . "Email: {$datos['email']}\n"
@@ -563,7 +713,7 @@ class PublicSide
       'post_content' => $text,
     ], true);
 
-    if (is_wp_error($post_id)) return null;
+    if (is_wp_error($post_id)) return [null, false];
 
     update_post_meta($post_id, 'aba_oid',           $oid);
     update_post_meta($post_id, 'aba_approval_code', $approval_code);
@@ -577,20 +727,26 @@ class PublicSide
     if ($payload) {
       update_post_meta($post_id, 'aba_payload', wp_json_encode($payload));
     }
-
-    // Llamar al backend para crear la reserva en el sistema
-    $id_reserva = $this->llamar_api_reservas($oid, $datos, $approval_code, $payload);
-    if ($id_reserva) {
-      update_post_meta($post_id, 'aba_id_reserva_backend', $id_reserva);
+    if ($ccbrand) {
+      update_post_meta($post_id, 'aba_ccbrand', $ccbrand);
     }
 
-    $display_id = $id_reserva ?? $post_id;
-    $this->enviar_emails_reserva($display_id, $oid, $datos, $resumen, $approval_code);
+    // Llamar al backend — si falla, el pago quedó registrado en WP pero sin número de reserva
+    $id_reserva = $this->llamar_api_reservas($oid, $datos, $approval_code, $payload, $ccbrand);
 
-    return $display_id;
+    if ($id_reserva) {
+      update_post_meta($post_id, 'aba_id_reserva_backend', $id_reserva);
+      // API OK: email de confirmación al cliente + notificación al admin
+      $this->enviar_emails_reserva($id_reserva, $oid, $datos, $resumen, $approval_code);
+      return [$id_reserva, true];
+    }
+
+    // API falló: alerta al admin para que procese manualmente; sin email al cliente aún
+    $this->enviar_email_admin_alerta($post_id, $oid, $datos, $resumen, $approval_code);
+    return [null, false];
   }
 
-  private function llamar_api_reservas(string $oid, array $datos, string $approval_code, array $payload): ?int
+  private function llamar_api_reservas(string $oid, array $datos, string $approval_code, array $payload, string $ccbrand = ''): ?int
   {
     if (empty($payload['categoria']) || empty($payload['fecha_retiro'])) return null;
 
@@ -622,7 +778,7 @@ class PublicSide
       'pago_sena' => [
         'importe'             => intval($datos['monto']),
         'fecha'               => wp_date('Y-m-d'),
-        'tipo_pago'           => 'Tarjeta',
+        'tipo_pago'           => $this->ccbrand_to_tipo_pago($ccbrand),
         'moneda'              => 'ARS',
         'cuotas'              => 1,
         'concepto'            => 'Seña reserva web',
@@ -661,36 +817,43 @@ class PublicSide
 
   private function enviar_emails_reserva(int $post_id, string $oid, array $datos, string $resumen, string $approval_code): void
   {
-    $site_name  = get_bloginfo('name');
-    $admin_mail = get_option('aba_reservas_email', get_option('admin_email'));
-    $headers    = ['Content-Type: text/html; charset=UTF-8'];
-    $monto_fmt  = '$ ' . number_format($datos['monto'], 0, ',', '.');
-    $resumen_html = nl2br(esc_html($resumen));
+    $site_name       = get_bloginfo('name');
+    $admin_mail      = get_option('aba_reservas_email', get_option('admin_email'));
+    $headers         = ['Content-Type: text/html; charset=UTF-8'];
+    $monto_fmt       = '$ ' . number_format($datos['monto'], 0, ',', '.');
+    $resumen_html    = nl2br(esc_html($resumen));
+    $pago_anticipado = !empty($datos['pago_anticipado']);
+    $tipo_pago_label = $pago_anticipado ? 'Pago anticipado (20% dto. en tarifa)' : 'Seña';
 
     // Email al cliente
     $subject_cliente = "Confirmación de reserva #{$post_id} — {$site_name}";
+    $intro_cliente   = $pago_anticipado
+      ? 'Tu pago anticipado fue procesado exitosamente. Tu reserva está confirmada.'
+      : 'Tu seña fue procesada exitosamente. Tu reserva está confirmada.';
     $body_cliente = "
 <p>Hola <strong>" . esc_html($datos['nombre']) . "</strong>,</p>
-<p>Tu seña fue procesada exitosamente. Tu reserva está confirmada.</p>
+<p>{$intro_cliente}</p>
 <table cellpadding='4' style='border-collapse:collapse;font-family:sans-serif;font-size:14px'>
   <tr><td><strong>N° de reserva</strong></td><td>#{$post_id}</td></tr>
+  <tr><td><strong>Tipo de pago</strong></td><td>{$tipo_pago_label}</td></tr>
   <tr><td><strong>Monto abonado</strong></td><td>{$monto_fmt}</td></tr>"
   . ($approval_code ? "<tr><td><strong>Código aprobación</strong></td><td>{$approval_code}</td></tr>" : '') . "
 </table>
 " . ($resumen_html ? "<hr><p><strong>Detalle:</strong><br>{$resumen_html}</p>" : '') . "
-<p>Nos vemos en la fecha del retiro.<br><strong>{$site_name}</strong></p>";
+<p>Tu reserva está confirmada. Te contactaremos para completar tus datos.<br><strong>{$site_name}</strong></p>";
 
     wp_mail($datos['email'], $subject_cliente, $body_cliente, $headers);
 
     // Email al admin
-    $subject_admin = "Nueva reserva #{$post_id} — " . esc_html($datos['nombre']);
+    $subject_admin = ($pago_anticipado ? '[PAGO ANTICIPADO] ' : '') . "Nueva reserva #{$post_id} — " . esc_html($datos['nombre']);
     $body_admin = "
-<p>Se registró una nueva reserva con seña cobrada.</p>
+<p>Se registró una nueva reserva" . ($pago_anticipado ? " con <strong>pago anticipado (20% dto.)</strong>." : " con seña cobrada.") . "</p>
 <table cellpadding='4' style='border-collapse:collapse;font-family:sans-serif;font-size:14px'>
   <tr><td><strong>N° de reserva</strong></td><td>#{$post_id}</td></tr>
   <tr><td><strong>OID</strong></td><td>{$oid}</td></tr>
+  <tr><td><strong>Tipo de pago</strong></td><td>{$tipo_pago_label}</td></tr>
   <tr><td><strong>Approval</strong></td><td>" . ($approval_code ?: '—') . "</td></tr>
-  <tr><td><strong>Monto seña</strong></td><td>{$monto_fmt}</td></tr>
+  <tr><td><strong>Monto cobrado</strong></td><td>{$monto_fmt}</td></tr>
   <tr><td><strong>Cliente</strong></td><td>" . esc_html($datos['nombre']) . "</td></tr>
   <tr><td><strong>Email</strong></td><td>" . esc_html($datos['email']) . "</td></tr>
   <tr><td><strong>Teléfono</strong></td><td>" . esc_html($datos['telefono']) . "</td></tr>
@@ -698,6 +861,33 @@ class PublicSide
 " . ($resumen_html ? "<hr><p><strong>Detalle:</strong><br>{$resumen_html}</p>" : '');
 
     wp_mail($admin_mail, $subject_admin, $body_admin, $headers);
+  }
+
+  private function enviar_email_admin_alerta(int $post_id, string $oid, array $datos, string $resumen, string $approval_code): void
+  {
+    $site_name  = get_bloginfo('name');
+    $admin_mail = get_option('aba_reservas_email', get_option('admin_email'));
+    $headers    = ['Content-Type: text/html; charset=UTF-8'];
+    $monto_fmt  = '$ ' . number_format($datos['monto'], 0, ',', '.');
+    $resumen_html = nl2br(esc_html($resumen));
+
+    $subject = "⚠️ PAGO COBRADO SIN RESERVA — {$oid} — " . esc_html($datos['nombre']);
+    $body = "
+<p style='color:#c0392b;font-weight:bold'>⚠️ La seña fue cobrada pero la API no pudo crear la reserva en el sistema. Procesar manualmente.</p>
+<table cellpadding='4' style='border-collapse:collapse;font-family:sans-serif;font-size:14px'>
+  <tr><td><strong>OID Fiserv</strong></td><td>{$oid}</td></tr>
+  <tr><td><strong>Approval</strong></td><td>" . ($approval_code ?: '—') . "</td></tr>
+  <tr><td><strong>Monto seña</strong></td><td>{$monto_fmt}</td></tr>
+  <tr><td><strong>Cliente</strong></td><td>" . esc_html($datos['nombre']) . " " . esc_html($datos['apellido'] ?? '') . "</td></tr>
+  <tr><td><strong>DNI</strong></td><td>" . esc_html($datos['dni'] ?? '') . "</td></tr>
+  <tr><td><strong>Email</strong></td><td>" . esc_html($datos['email']) . "</td></tr>
+  <tr><td><strong>Teléfono</strong></td><td>" . esc_html($datos['telefono']) . "</td></tr>
+  <tr><td><strong>WP Post ID</strong></td><td>#{$post_id} (referencia interna)</td></tr>
+</table>
+" . ($resumen_html ? "<hr><p><strong>Detalle reserva:</strong><br>{$resumen_html}</p>" : '') . "
+<p>Una vez creada la reserva manualmente, enviar la confirmación al cliente.</p>";
+
+    wp_mail($admin_mail, $subject, $body, $headers);
   }
 
   private function obtener_cotizacion(int $id_autos, string $inicio, string $fin, int $hora_inicio, int $hora_fin, string $sucursal): array
@@ -734,6 +924,14 @@ class PublicSide
     }
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
-    return is_array($body) ? ['data' => $body] : ['error' => 'api_error'];
+    if (!is_array($body)) return ['error' => 'api_error'];
+
+    // Prefijo dominio API en imagen del vehículo (la API devuelve rutas relativas)
+    $api_base = 'https://aba.benvert.com.ar';
+    if (!empty($body['vehiculo']['Imagen']) && str_starts_with($body['vehiculo']['Imagen'], '/')) {
+      $body['vehiculo']['Imagen'] = $api_base . $body['vehiculo']['Imagen'];
+    }
+
+    return ['data' => $body];
   }
 }

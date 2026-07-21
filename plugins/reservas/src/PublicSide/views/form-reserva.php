@@ -218,3 +218,130 @@ if (!function_exists('aba_reserva_render_time_options')) {
   }
 })();
 </script>
+<script>
+(function () {
+  function getBa()       { return new Date(Date.now() - 10800 * 1000); }
+  function toISO(d)      { return d.toISOString().slice(0, 10); }
+  function addDays(d, n) { var r = new Date(d); r.setUTCDate(r.getUTCDate() + n); return r; }
+  function addMonths(d,n){ var r = new Date(d); r.setUTCMonth(r.getUTCMonth() + n); return r; }
+
+  // Mínimo 3 días de facturación:
+  // - 3+ días calendario: siempre OK
+  // - 2 días calendario: OK solo si devolución es MÁS de 4hs después del retiro
+  // - 1 día o menos: nunca OK
+  function meetsMinDays(pickupDateObj, dropoffDateObj, pickupTime, dropoffTime) {
+    var diff = Math.round((dropoffDateObj - pickupDateObj) / (1000 * 60 * 60 * 24));
+    if (diff >= 3) return true;
+    if (diff <= 1) return false;
+    var pParts = (pickupTime  || '12:00').split(':');
+    var dParts = (dropoffTime || '12:00').split(':');
+    var pMins  = parseInt(pParts[0], 10) * 60 + parseInt(pParts[1] || 0, 10);
+    var dMins  = parseInt(dParts[0], 10) * 60 + parseInt(dParts[1] || 0, 10);
+    return (dMins - pMins) >= 240;
+  }
+
+  function getMinPickupHour(pickupDateStr) {
+    var ba    = getBa();
+    var baDay  = ba.getUTCDay();
+    var baHour = ba.getUTCHours() + ba.getUTCMinutes() / 60;
+    // Regla 1: después de 18hs → mañana mínimo 14hs
+    if (baHour >= 18 && pickupDateStr === toISO(addDays(ba, 1))) return 14;
+    // Regla 2: sábado después de 12hs → lunes mínimo 14hs
+    if (baDay === 6 && baHour >= 12 && pickupDateStr === toISO(addDays(ba, 2))) return 14;
+    return 0;
+  }
+
+  function showError(msg) {
+    var el = document.getElementById('aba-reglas-error');
+    if (!el) {
+      el = document.createElement('p');
+      el.id = 'aba-reglas-error';
+      el.style.cssText = 'color:#c00;background:#fee2e2;border-radius:6px;padding:8px 14px;margin-top:8px;font-size:13px;font-weight:600;';
+      var card = document.querySelector('.reserva-search-card');
+      if (card) card.insertAdjacentElement('afterend', el);
+    }
+    el.textContent = msg;
+    el.style.display = 'block';
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.style.display = 'none'; }, 5000);
+  }
+
+  function initRules() {
+    var rangeEl = document.querySelector('#reserva_rango');
+    if (!rangeEl || !rangeEl._flatpickr) { setTimeout(initRules, 150); return; }
+
+    var fp     = rangeEl._flatpickr;
+    var ba     = getBa();
+    var baDay  = ba.getUTCDay();
+    var baHour = ba.getUTCHours() + ba.getUTCMinutes() / 60;
+
+    // Regla 3: maxDate = hoy + 4 meses
+    fp.set('maxDate', toISO(addMonths(ba, 4)));
+
+    // Regla 2: sábado después de 12hs → minDate = lunes próximo
+    if (baDay === 6 && baHour >= 12) {
+      fp.set('minDate', toISO(addDays(ba, 2)));
+    }
+
+    // Reglas 4 y 5: máximo 30 días / mínimo 3 días de alquiler
+    fp.config.onChange.push(function (sel) {
+      var cap = toISO(addMonths(getBa(), 4));
+      if (sel.length === 1) {
+        var max30 = toISO(addDays(sel[0], 30));
+        fp.set('maxDate', max30 < cap ? max30 : cap);
+      } else if (sel.length === 2) {
+        var horaRetiro = (document.querySelector('#pickup_horario')  || {}).value || '12:00';
+        var horaDev    = (document.querySelector('#dropoff_horario') || {}).value || '12:00';
+        if (!meetsMinDays(sel[0], sel[1], horaRetiro, horaDev)) {
+          fp.clear();
+          showError('Mínimo 3 días de alquiler. Con 2 días calendario, la devolución debe ser más de 4 hs después del retiro.');
+        }
+        fp.set('maxDate', cap);
+      } else {
+        fp.set('maxDate', cap);
+      }
+    });
+
+    // Validaciones al enviar el formulario
+    var form = rangeEl.closest('form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        var fechaRetiroEl  = document.querySelector('#pickup_fecha');
+        var fechaDevEl     = document.querySelector('#dropoff_fecha');
+        var horaRetiroEl   = document.querySelector('#pickup_horario');
+        var horaDevEl      = document.querySelector('#dropoff_horario');
+        if (!fechaRetiroEl || !fechaRetiroEl.value) return;
+
+        // Reglas 1 y 2: hora mínima de retiro
+        var minH = getMinPickupHour(fechaRetiroEl.value);
+        if (minH) {
+          var selH = parseInt(horaRetiroEl.value.split(':')[0], 10);
+          if (selH < minH) {
+            e.preventDefault();
+            showError('Para esa fecha el horario mínimo de retiro es las ' + minH + ':00 hs.');
+            return;
+          }
+        }
+
+        // Regla 5: mínimo 3 días de facturación
+        if (fechaDevEl && fechaDevEl.value) {
+          var pDate = new Date(fechaRetiroEl.value);
+          var dDate = new Date(fechaDevEl.value);
+          var pTime = horaRetiroEl ? horaRetiroEl.value : '12:00';
+          var dTime = horaDevEl   ? horaDevEl.value    : '12:00';
+          if (!meetsMinDays(pDate, dDate, pTime, dTime)) {
+            e.preventDefault();
+            showError('Mínimo 3 días de alquiler. Con 2 días calendario, la devolución debe ser más de 4 hs después del retiro.');
+          }
+        }
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(initRules, 200); });
+  } else {
+    setTimeout(initRules, 200);
+  }
+})();
+</script>
