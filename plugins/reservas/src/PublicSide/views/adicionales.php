@@ -276,10 +276,10 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
         <!-- Franquicias -->
         <div style="padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #F0F0F0;">
           <p style="font-size:11px;font-weight:700;color:#90A3BF;text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px;">Franquicias</p>
-          <?php foreach ([['Daños', $franq['danos']], ['Vuelco', $franq['vuelco']], ['Robo', $franq['robo']]] as [$label, $val]): ?>
+          <?php foreach ([['Daños', 'danos', $franq['danos']], ['Vuelco', 'vuelco', $franq['vuelco']], ['Robo', 'robo', $franq['robo']]] as [$label, $fkey, $val]): ?>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#596780;margin-bottom:3px;">
             <span><?php echo esc_html($label); ?></span>
-            <span><?php echo $fmt_precio($val); ?></span>
+            <span class="aba-franq-val" data-franq="<?php echo esc_attr($fkey); ?>" data-original="<?php echo esc_attr($val); ?>"><?php echo $fmt_precio($val); ?></span>
           </div>
           <?php endforeach; ?>
         </div>
@@ -309,6 +309,51 @@ window.abaCotizacion = <?php echo wp_json_encode([
   'waNumber'        => $WA_NUMBER,
   'pago_anticipado' => $pago_anticipado,
 ]); ?>;
+</script>
+
+<script>
+// Actualiza el texto de Franquicias según la cobertura elegida.
+// plus_cover  → reduce Daños a $ 0
+// smart_cover → reduce Daños y Vuelco a $ 0
+(function () {
+  var franqEls = document.querySelectorAll('.aba-franq-val');
+  if (!franqEls.length) return;
+
+  var REDUCE = {
+    plus_cover:  ['danos'],
+    smart_cover: ['danos', 'vuelco']
+  };
+
+  function fmt(n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); }
+
+  function franqReducidas() {
+    var out = {};
+    document.querySelectorAll('.aba-cob-toggle:checked').forEach(function (chk) {
+      (REDUCE[chk.value] || []).forEach(function (f) { out[f] = true; });
+    });
+    return out;
+  }
+
+  function actualizar() {
+    var reducidas = franqReducidas();
+    franqEls.forEach(function (el) {
+      var f = el.getAttribute('data-franq');
+      var orig = parseFloat(el.getAttribute('data-original')) || 0;
+      if (reducidas[f]) {
+        el.innerHTML =
+          '<span style="text-decoration:line-through;color:#90A3BF;margin-right:6px;">' + fmt(orig) + '</span>' +
+          '<span style="color:#679938;font-weight:700;">$ 0</span>';
+      } else {
+        el.textContent = fmt(orig);
+      }
+    });
+  }
+
+  document.querySelectorAll('.aba-cob-toggle').forEach(function (chk) {
+    chk.addEventListener('change', actualizar);
+  });
+  actualizar();
+})();
 </script>
 
 <!-- ════ MODAL PAGO ════ -->
