@@ -9,6 +9,27 @@ use GuzzleHttp\Exception\RequestException;
 class PublicSide
 {
   private const CPT_CONSULTA = 'aba_reserva_consulta';
+
+  /**
+   * Normaliza el valor de sucursal que llega del form (slug o nombre) al
+   * nombre EXACTO que espera la API de benvert. Un solo lugar para los strings.
+   * Fallback: deja pasar cualquier otro valor (otras sucursales del sistema).
+   */
+  private function normalizar_sucursal(string $raw): string
+  {
+    $key = strtolower(trim($raw));
+    $map = [
+      'bariloche'                 => 'Bariloche Aeropuerto', // compat valor histórico
+      'bariloche_aeropuerto'      => 'Bariloche Aeropuerto',
+      'bariloche aeropuerto'      => 'Bariloche Aeropuerto',
+      'bariloche_centro'          => 'Bariloche Centro',
+      'bariloche centro'          => 'Bariloche Centro',
+      'bariloche_otros'           => 'Bariloche - Otros lugares',
+      'bariloche - otros lugares' => 'Bariloche - Otros lugares',
+    ];
+    return $map[$key] ?? $raw;
+  }
+
   public function __construct()
   {
     add_shortcode('aba_reserva_form', [$this, 'shortcode_form_reserva']);
@@ -260,7 +281,7 @@ class PublicSide
       'fin' => $fin,
       'hora_inicio' => $this->parse_hora($params['pickup_horario']),
       'hora_fin' => $this->parse_hora($params['dropoff_horario']),
-      'sucursal' => $params['pickup_ubicacion'],
+      'sucursal' => $this->normalizar_sucursal($params['pickup_ubicacion'] ?? ''),
     ];
 
     $url = 'https://aba.benvert.com.ar/api/disponibilidad?' . http_build_query($query);
@@ -767,8 +788,8 @@ class PublicSide
         'hora_retiro'         => intval($payload['hora_retiro']  ?? 9),
         'fecha_devolucion'    => $payload['fecha_devolucion']    ?? '',
         'hora_devolucion'     => intval($payload['hora_devolucion'] ?? 9),
-        'sucursal_retiro'     => $payload['sucursal_retiro']     ?? '',
-        'sucursal_devolucion' => $payload['sucursal_devolucion'] ?? $payload['sucursal_retiro'] ?? '',
+        'sucursal_retiro'     => $this->normalizar_sucursal($payload['sucursal_retiro'] ?? ''),
+        'sucursal_devolucion' => $this->normalizar_sucursal($payload['sucursal_devolucion'] ?? $payload['sucursal_retiro'] ?? ''),
         'tarifa_total'        => intval($payload['tarifa_total']    ?? 0),
         'dias_cobrables'      => intval($payload['dias_cobrables']  ?? 0),
         'km_libres'           => $payload['km_libres']           ?? 'Ilimitados',
@@ -892,12 +913,15 @@ class PublicSide
 
   private function obtener_cotizacion(int $id_autos, string $inicio, string $fin, int $hora_inicio, int $hora_fin, string $sucursal): array
   {
+    // Un solo selector en el form → retiro = devolución.
+    $sucursal = $this->normalizar_sucursal($sucursal);
     $url = "https://aba.benvert.com.ar/api/cotizacion-detalle/{$id_autos}?" . http_build_query([
-      'inicio'          => $inicio,
-      'fin'             => $fin,
-      'hora_inicio'     => $hora_inicio,
-      'hora_fin'        => $hora_fin,
-      'sucursal_retiro' => $sucursal,
+      'inicio'              => $inicio,
+      'fin'                 => $fin,
+      'hora_inicio'         => $hora_inicio,
+      'hora_fin'            => $hora_fin,
+      'sucursal_retiro'     => $sucursal,
+      'sucursal_devolucion' => $sucursal,
     ]);
 
     $response = wp_remote_get($url, [

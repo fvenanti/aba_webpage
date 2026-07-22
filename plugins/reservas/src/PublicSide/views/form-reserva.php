@@ -124,6 +124,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
               <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de recogida / devolución</label>
               <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
                 <option value="bariloche" selected>Bariloche Aeropuerto</option>
+                <option value="bariloche_centro">Bariloche Centro</option>
               </select>
             </div>
 

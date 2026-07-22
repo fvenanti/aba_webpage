@@ -100,7 +100,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
            + ($hora_fin_int  < 8 || $hora_fin_int  >= 20 ? 1 : 0);
       if ($qty > 0) $autoQtys[$ad['id']] = $qty;
     }
-    if (($ad['clave'] ?? '') === 'entrega_aeropuerto' && $ubicacion_raw === 'bariloche') {
+    if (($ad['clave'] ?? '') === 'entrega_aeropuerto' && in_array($ubicacion_raw, ['bariloche', 'bariloche_aeropuerto'], true)) {
       $autoQtys[$ad['id']] = 1;
     }
   }

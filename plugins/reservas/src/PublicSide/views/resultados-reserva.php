@@ -113,6 +113,9 @@ if (!empty($modelos)) {
                 <option value="bariloche" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche'); ?>>
                   Bariloche Aeropuerto
                 </option>
+                <option value="bariloche_centro" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche_centro'); ?>>
+                  Bariloche Centro
+                </option>
               </select>
             </div>
 
