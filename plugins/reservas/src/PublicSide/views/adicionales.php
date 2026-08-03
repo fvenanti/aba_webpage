@@ -156,7 +156,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
             <p style="font-size:11px;color:#90A3BF;font-weight:600;margin:0;"><?php echo $modo_label($cob['modo']); ?></p>
           </div>
           <label class="aba-toggle-wrap">
-            <input type="checkbox" class="aba-cob-toggle" value="<?php echo esc_attr($cob['clave']); ?>" />
+            <input type="checkbox" class="aba-cob-toggle" value="<?php echo esc_attr($cob['clave']); ?>" data-pct="<?php echo esc_attr($cob['pct_reduccion'] ?? 0); ?>" />
             <span class="aba-toggle-slider"></span>
           </label>
         </div>
@@ -313,36 +313,39 @@ window.abaCotizacion = <?php echo wp_json_encode([
 
 <script>
 // Actualiza el texto de Franquicias según la cobertura elegida.
-// plus_cover  → reduce Daños a $ 0
-// smart_cover → reduce Daños y Vuelco a $ 0
+// El % de reducción (pct_reduccion) lo define la API; la web solo lo aplica.
+// Aplica a Daños y Vuelco; Robo queda SIEMPRE intacto.
+//   Seguro PLUS  (pct 50)  → Daños y Vuelco -50%
+//   Seguro TOTAL (pct 100) → Daños y Vuelco a $ 0
 (function () {
   var franqEls = document.querySelectorAll('.aba-franq-val');
   if (!franqEls.length) return;
 
-  var REDUCE = {
-    plus_cover:  ['danos'],
-    smart_cover: ['danos', 'vuelco']
-  };
+  // Franquicias que las coberturas reducen (Robo no se toca).
+  var FRANQ_AFECTADAS = ['danos', 'vuelco'];
 
   function fmt(n) { return '$ ' + Math.round(n).toLocaleString('es-AR'); }
 
-  function franqReducidas() {
-    var out = {};
+  // Mayor pct de reducción activo (si hubiera más de una cobertura tildada).
+  function pctActivo() {
+    var maxPct = 0;
     document.querySelectorAll('.aba-cob-toggle:checked').forEach(function (chk) {
-      (REDUCE[chk.value] || []).forEach(function (f) { out[f] = true; });
+      var p = parseFloat(chk.getAttribute('data-pct')) || 0;
+      if (p > maxPct) maxPct = p;
     });
-    return out;
+    return maxPct;
   }
 
   function actualizar() {
-    var reducidas = franqReducidas();
+    var pct = pctActivo();
     franqEls.forEach(function (el) {
       var f = el.getAttribute('data-franq');
       var orig = parseFloat(el.getAttribute('data-original')) || 0;
-      if (reducidas[f]) {
+      if (pct > 0 && FRANQ_AFECTADAS.indexOf(f) !== -1) {
+        var reducido = orig * (1 - pct / 100);
         el.innerHTML =
           '<span style="text-decoration:line-through;color:#90A3BF;margin-right:6px;">' + fmt(orig) + '</span>' +
-          '<span style="color:#679938;font-weight:700;">$ 0</span>';
+          '<span style="color:#679938;font-weight:700;">' + fmt(reducido) + '</span>';
       } else {
         el.textContent = fmt(orig);
       }
