@@ -520,14 +520,17 @@ class PublicSide
     $sena_pct  = floatval($tar['sena_pct'] ?? 35);
     $base      = floatval($tar['total_tarjeta'] ?? 0);
 
-    // Sumar adicionales seleccionados verificando precios desde la API
+    // Sumar adicionales seleccionados verificando precios desde la API.
+    // IMPORTANTE: esta normalización de 'modo' debe ser IDÉNTICA a la de la vista
+    // adicionales.php, o el cobro difiere del total mostrado (ver Sillita Grande = plano).
     $ads_api = [];
-    $claves_estadia_override = ['barras_portaequipaje', 'gps', 'silla_bebes'];
+    $claves_estadia_override  = ['barras_portaequipaje', 'gps', 'silla_bebes'];
+    $nombres_estadia_override = ['booster', 'sillita grande'];
     foreach ($cot['adicionales'] ?? [] as $ad) {
       $clave_ad = $ad['clave'] ?? null;
-      $modo_ad  = (isset($clave_ad) && in_array($clave_ad, $claves_estadia_override, true))
-                  ? 'estadia'
-                  : ($ad['modo'] ?? 'total');
+      $es_estadia = (isset($clave_ad) && in_array($clave_ad, $claves_estadia_override, true))
+                    || in_array(strtolower($ad['nombre'] ?? ''), $nombres_estadia_override, true);
+      $modo_ad  = $es_estadia ? 'estadia' : ($ad['modo'] ?? 'total');
       if ($clave_ad !== null) {
         $ads_api[$clave_ad] = ['precio' => floatval($ad['precio'] ?? 0), 'modo' => $modo_ad];
       }
