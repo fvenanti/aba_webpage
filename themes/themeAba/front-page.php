@@ -2,7 +2,7 @@
 
 <style>
 #highligth h1 {
-  font-size: 58px !important;
+  font-size: clamp(30px, 4.5vw, 58px) !important;
   font-weight: 800 !important;
   line-height: 1.2 !important;
   color: #ffffff !important;
@@ -11,9 +11,9 @@
     -1px -1px 4px rgba(0,0,0,0.9),
     0 0 20px rgba(0,0,0,0.7);
   -webkit-text-stroke: 1px rgba(0,0,0,0.6);
-}
-@media (max-width: 768px) {
-  #highligth h1 { font-size: 36px !important; }
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
 }
 </style>
 
