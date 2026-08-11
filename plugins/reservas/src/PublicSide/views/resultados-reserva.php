@@ -157,6 +157,21 @@ if (!empty($modelos)) {
     <!-- Listado de modelos -->
     <div class="flex flex-col gap-5">
       <?php if (!empty($cars)): ?>
+        <?php
+        // Texto explicativo Low Cost por idioma (categoría terminada en "-")
+        $aba_lang = function_exists('qtranxf_getLanguage') ? qtranxf_getLanguage() : 'es';
+        $aba_lc_txt = [
+          'es' => '¿Qué es Low Cost? Son unidades de años anteriores, revisadas y con el mantenimiento al día. Ofrecen el mismo nivel de seguridad, seguro y asistencia que toda nuestra flota, a una tarifa más conveniente.',
+          'en' => 'What is Low Cost? Vehicles from earlier years, fully serviced and maintained. Same level of safety, insurance and assistance as our entire fleet, at a more convenient rate.',
+          'pt' => 'O que é Low Cost? Veículos de anos anteriores, revisados e com manutenção em dia. Mesmo nível de segurança, seguro e assistência que toda a frota, a uma tarifa mais conveniente.',
+        ];
+        $aba_lc_text = $aba_lc_txt[$aba_lang] ?? $aba_lc_txt['es'];
+        ?>
+        <style>
+        .aba-lc-badge{position:relative;display:inline-flex;align-items:center;gap:4px;background:#679938;color:#fff !important;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;cursor:help;outline:none;vertical-align:middle;}
+        .aba-lc-badge .aba-lc-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:0;width:280px;max-width:72vw;background:#1A202C;color:#fff;font-size:12px;font-weight:400;line-height:1.5;text-transform:none;letter-spacing:normal;padding:10px 13px;border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.28);z-index:60;}
+        .aba-lc-badge:hover .aba-lc-tip,.aba-lc-badge:focus .aba-lc-tip,.aba-lc-badge:focus-within .aba-lc-tip{display:block;}
+        </style>
         <?php foreach ($cars as $car): ?>
           <article data-cat='<?php echo esc_attr($car['category']); ?>'
             data-price='<?php echo aba_parse_ars($car['price']); ?>'
@@ -187,6 +202,12 @@ if (!empty($modelos)) {
               <h3 style="font-size:17px;font-weight:700;color:#1A202C;margin:0 0 10px;">
                 <?php echo esc_html($car['model']); ?>
               </h3>
+              <?php if (str_ends_with(trim($car['category']), '-')): ?>
+              <span class="aba-lc-badge" tabindex="0" role="button" aria-label="<?php echo esc_attr($aba_lc_text); ?>" style="margin:-4px 0 10px;">
+                LOW COST <i class="fa fa-info-circle" style="font-size:11px;"></i>
+                <span class="aba-lc-tip"><?php echo esc_html($aba_lc_text); ?></span>
+              </span>
+              <?php endif; ?>
               <?php if ($car['passengers'] !== null || $car['bags'] !== null || $car['transmission'] !== null): ?>
               <div style="display:flex;flex-wrap:wrap;gap:6px;">
                 <?php
