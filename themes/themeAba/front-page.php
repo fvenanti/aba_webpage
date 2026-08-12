@@ -38,10 +38,11 @@
 
 	<!-- ═══ BANNER PROMO (reveal al scrollear) ═══ -->
 	<style>
-	.aba-promo-banner{max-width:1290px;margin:0 auto;padding:34px 20px;text-align:center;opacity:0;transform:translateY(40px);transition:opacity .7s ease,transform .7s ease;}
+	.aba-promo-banner{margin:0;text-align:center;opacity:0;transform:translateY(40px);transition:opacity .7s ease,transform .7s ease;}
 	.aba-promo-banner.aba-visible{opacity:1;transform:translateY(0);}
-	.aba-promo-banner img{width:100%;max-width:1200px;height:auto;border-radius:12px;display:inline-block;box-shadow:0 10px 34px rgba(0,0,0,.14);}
-	@media (max-width:767px){.aba-promo-banner{padding:24px 14px;} .aba-promo-banner img{max-width:480px;}}
+	.aba-promo-banner img{display:block;width:100%;height:auto;}
+	/* Mobile: promo vertical centrada, con aire y bordes redondeados */
+	@media (max-width:767px){.aba-promo-banner{padding:24px 14px;} .aba-promo-banner img{max-width:480px;margin:0 auto;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,.14);}}
 	</style>
 	<section class="aba-promo-banner" aria-label="Promoción">
 		<picture>
