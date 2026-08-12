@@ -36,6 +36,31 @@
 		</div>
 	</div>
 
+	<!-- ═══ BANNER PROMO (reveal al scrollear) ═══ -->
+	<style>
+	.aba-promo-banner{max-width:1290px;margin:0 auto;padding:34px 20px;text-align:center;opacity:0;transform:translateY(40px);transition:opacity .7s ease,transform .7s ease;}
+	.aba-promo-banner.aba-visible{opacity:1;transform:translateY(0);}
+	.aba-promo-banner img{width:100%;max-width:1200px;height:auto;border-radius:12px;display:inline-block;box-shadow:0 10px 34px rgba(0,0,0,.14);}
+	@media (max-width:767px){.aba-promo-banner{padding:24px 14px;} .aba-promo-banner img{max-width:480px;}}
+	</style>
+	<section class="aba-promo-banner" aria-label="Promoción">
+		<picture>
+			<source media="(max-width: 767px)" srcset="<?php echo esc_url(get_template_directory_uri()); ?>/img/promo-banner-mobile.jpg">
+			<img src="<?php echo esc_url(get_template_directory_uri()); ?>/img/promo-banner-desktop.jpg" alt="Reservá online con 20% off - Alquiler de vehículos en Bariloche" loading="lazy">
+		</picture>
+	</section>
+	<script>
+	(function(){
+		var el=document.querySelector('.aba-promo-banner');
+		if(!el)return;
+		if(!('IntersectionObserver' in window)){el.classList.add('aba-visible');return;}
+		var obs=new IntersectionObserver(function(entries){
+			entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('aba-visible');obs.unobserve(e.target);}});
+		},{threshold:0.2});
+		obs.observe(el);
+	})();
+	</script>
+
 	<div id="flotaSlider">
 		<div class="swiper-container">
 	        <div class="swiper-wrapper">
