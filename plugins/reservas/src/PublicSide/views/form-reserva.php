@@ -137,7 +137,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
                 </div>
                 <div id="aba-devo-half" style="display:none;">
                   <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_ubicacion">Lugar de devolución</label>
-                  <select id="dropoff_ubicacion" name="dropoff_ubicacion" class="" placeholder="Devolución" disabled>
+                  <select id="dropoff_ubicacion" name="dropoff_ubicacion" class="" placeholder="Devolución">
                     <option value="bariloche" selected>Bariloche Aeropuerto</option>
                     <option value="bariloche_centro">Bariloche Centro</option>
                   </select>
