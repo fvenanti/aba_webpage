@@ -109,12 +109,14 @@ if (!empty($modelos)) {
         <div class="px-6 py-6 bg-white rounded-lg md:px-8 reserva-search-card">
           <?php $aba_devo_cookie = strtolower(sanitize_text_field($_COOKIE['aba_devo'] ?? '')); $aba_devo_on = $aba_devo_cookie !== ''; ?>
           <style>
+          .aba-res-grid { display: grid; grid-template-columns: 1fr; }
+          @media (min-width: 768px) { .aba-res-grid { grid-template-columns: repeat(6, 1fr); } }
           .aba-lugar-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
           .aba-devo-check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; font-weight: 600; color: #1A202C; cursor: pointer; user-select: none; }
           .aba-devo-check input { width: 16px; height: 16px; cursor: pointer; accent-color: #679938; }
           @media (max-width: 767px) { .aba-lugar-inner { grid-template-columns: 1fr; } }
           </style>
-          <div class="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-6">
+          <div class="aba-res-grid gap-4 md:gap-6">
             <div class="reserva-search-field md:col-span-2">
               <div class="aba-lugar-inner">
                 <div>
