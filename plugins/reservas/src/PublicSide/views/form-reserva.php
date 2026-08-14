@@ -3,6 +3,14 @@ if (!defined('ABSPATH'))
   exit;
 /** @var string $action */
 
+// Helper de traducción (ES/EN/PT) con fallback a español.
+if (!function_exists('aba_t')) {
+  function aba_t($es, $en, $pt) {
+    $l = function_exists('qtranxf_getLanguage') ? qtranxf_getLanguage() : 'es';
+    return $l === 'en' ? $en : ($l === 'pt' ? $pt : $es);
+  }
+}
+
 if (!function_exists('aba_reserva_render_time_options')) {
   function aba_reserva_render_time_options(string $selected = '12:00'): string
   {
@@ -129,14 +137,14 @@ if (!function_exists('aba_reserva_render_time_options')) {
             <div class="reserva-search-field aba-lugar-field">
               <div class="aba-lugar-inner">
                 <div>
-                  <label id="aba-lbl-retiro" class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de retiro/devolución</label>
+                  <label id="aba-lbl-retiro" class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion"><?php echo aba_t('Lugar de retiro/devolución', 'Pickup / return location', 'Local de retirada / devolução'); ?></label>
                   <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
                     <option value="bariloche" selected>Bariloche Aeropuerto</option>
                     <option value="bariloche_centro">Bariloche Centro</option>
                   </select>
                 </div>
                 <div id="aba-devo-half" style="display:none;">
-                  <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_ubicacion">Lugar de devolución</label>
+                  <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_ubicacion"><?php echo aba_t('Lugar de devolución', 'Return location', 'Local de devolução'); ?></label>
                   <select id="dropoff_ubicacion" name="dropoff_ubicacion" class="" placeholder="Devolución">
                     <option value="bariloche" selected>Bariloche Aeropuerto</option>
                     <option value="bariloche_centro">Bariloche Centro</option>
@@ -146,7 +154,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
             </div>
 
             <div class="reserva-search-field">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="reserva_rango">Fecha de recogida / devolución</label>
+              <label class="block mb-2 font-bold text-[#1A202C]!" for="reserva_rango"><?php echo aba_t('Fecha de recogida / devolución', 'Pickup / return date', 'Data de retirada / devolução'); ?></label>
               <input type="text" id="reserva_rango"
                 placeholder="Seleccionar rango" autocomplete="off" />
               <input type="hidden" id="pickup_fecha" name="pickup_fecha" value="" />
@@ -154,14 +162,14 @@ if (!function_exists('aba_reserva_render_time_options')) {
             </div>
 
             <div class="reserva-search-field">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_horario">Hora de entrega</label>
+              <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_horario"><?php echo aba_t('Hora de entrega', 'Pickup time', 'Horário de retirada'); ?></label>
               <select id="pickup_horario" name="pickup_horario" class="" placeholder="Hora de entrega">
                 <?php echo aba_reserva_render_time_options('12:00'); ?>
               </select>
             </div>
 
             <div class="reserva-search-field">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_horario">Hora de devolución</label>
+              <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_horario"><?php echo aba_t('Hora de devolución', 'Return time', 'Horário de devolução'); ?></label>
               <select id="dropoff_horario" name="dropoff_horario" class="" placeholder="Hora de devolución">
                 <?php echo aba_reserva_render_time_options('12:00'); ?>
               </select>
@@ -169,7 +177,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
           </div>
           <label class="aba-devo-check">
             <input type="checkbox" id="aba-devo-toggle" />
-            Devolver en otro lugar
+            <?php echo aba_t('Devolver en otro lugar', 'Return at a different location', 'Devolver em outro local'); ?>
           </label>
         </div>
 
@@ -177,7 +185,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
           <button type="submit"
             class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!"
             style="white-space:nowrap;padding:10px 28px;min-width:120px;">
-            Consultar
+            <?php echo aba_t('Consultar', 'Search', 'Consultar'); ?>
           </button>
         </div>
 
@@ -186,6 +194,14 @@ if (!function_exists('aba_reserva_render_time_options')) {
 
   </form>
 </section>
+<script>
+window.abaI18n = <?php echo wp_json_encode([
+  'retiro'     => aba_t('Lugar de retiro', 'Pickup location', 'Local de retirada'),
+  'retiroDevo' => aba_t('Lugar de retiro/devolución', 'Pickup / return location', 'Local de retirada / devolução'),
+  'errMinDias' => aba_t('Mínimo 3 días de alquiler. Con 2 días calendario, la devolución debe ser más de 4 hs después del retiro.', 'Minimum 3 rental days. With 2 calendar days, the return must be more than 4 hours after pickup.', 'Mínimo de 3 dias de aluguel. Com 2 dias de calendário, a devolução deve ser mais de 4 horas após a retirada.'),
+  'errMinHora' => aba_t('Para esa fecha el horario mínimo de retiro es las', 'For that date the minimum pickup time is', 'Para essa data o horário mínimo de retirada é'),
+]); ?>;
+</script>
 <script>
 /* "Devolver en otro lugar": muestra el 2º selector y lleva la devolución por cookie */
 (function () {
@@ -200,11 +216,11 @@ if (!function_exists('aba_reserva_render_time_options')) {
     var s = devoSel();
     if (cb.checked) {
       half.style.display = '';
-      if (lbl) lbl.textContent = 'Lugar de retiro';
+      if (lbl) lbl.textContent = (window.abaI18n && window.abaI18n.retiro) || 'Lugar de retiro';
       if (s) setCookie(s.value);
     } else {
       half.style.display = 'none';
-      if (lbl) lbl.textContent = 'Lugar de retiro/devolución';
+      if (lbl) lbl.textContent = (window.abaI18n && window.abaI18n.retiroDevo) || 'Lugar de retiro/devolución';
       clearCookie();
     }
   }
@@ -352,7 +368,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
         var horaDev    = (document.querySelector('#dropoff_horario') || {}).value || '12:00';
         if (!meetsMinDays(sel[0], sel[1], horaRetiro, horaDev)) {
           fp.clear();
-          showError('Mínimo 3 días de alquiler. Con 2 días calendario, la devolución debe ser más de 4 hs después del retiro.');
+          showError((window.abaI18n && window.abaI18n.errMinDias) || 'Mínimo 3 días de alquiler. Con 2 días calendario, la devolución debe ser más de 4 hs después del retiro.');
         }
         fp.set('maxDate', cap);
       } else {
@@ -376,7 +392,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
           var selH = parseInt(horaRetiroEl.value.split(':')[0], 10);
           if (selH < minH) {
             e.preventDefault();
-            showError('Para esa fecha el horario mínimo de retiro es las ' + minH + ':00 hs.');
+            showError(((window.abaI18n && window.abaI18n.errMinHora) || 'Para esa fecha el horario mínimo de retiro es las') + ' ' + minH + ':00 hs.');
             return;
           }
         }
@@ -389,7 +405,7 @@ if (!function_exists('aba_reserva_render_time_options')) {
           var dTime = horaDevEl   ? horaDevEl.value    : '12:00';
           if (!meetsMinDays(pDate, dDate, pTime, dTime)) {
             e.preventDefault();
-            showError('Mínimo 3 días de alquiler. Con 2 días calendario, la devolución debe ser más de 4 hs después del retiro.');
+            showError((window.abaI18n && window.abaI18n.errMinDias) || 'Mínimo 3 días de alquiler. Con 2 días calendario, la devolución debe ser más de 4 hs después del retiro.');
           }
         }
       });
