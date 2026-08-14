@@ -107,17 +107,31 @@ if (!empty($modelos)) {
     <div class="">
       <form action="<?php echo esc_url($action); ?>" method="get" class="grid grid-cols-1 gap-6">
         <div class="px-6 py-6 bg-white rounded-lg md:px-8 reserva-search-card">
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-4 md:gap-6">
-            <div class="reserva-search-field md:col-span-1">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de entrega</label>
-              <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
-                <option value="bariloche" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche'); ?>>
-                  Bariloche Aeropuerto
-                </option>
-                <option value="bariloche_centro" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche_centro'); ?>>
-                  Bariloche Centro
-                </option>
-              </select>
+          <?php $aba_devo_cookie = strtolower(sanitize_text_field($_COOKIE['aba_devo'] ?? '')); $aba_devo_on = $aba_devo_cookie !== ''; ?>
+          <style>
+          .aba-lugar-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+          .aba-devo-check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; font-weight: 600; color: #1A202C; cursor: pointer; user-select: none; }
+          .aba-devo-check input { width: 16px; height: 16px; cursor: pointer; accent-color: #679938; }
+          @media (max-width: 767px) { .aba-lugar-inner { grid-template-columns: 1fr; } }
+          </style>
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-6">
+            <div class="reserva-search-field md:col-span-2">
+              <div class="aba-lugar-inner">
+                <div>
+                  <label id="aba-lbl-retiro" class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion"><?php echo $aba_devo_on ? 'Lugar de retiro' : 'Lugar de retiro/devolución'; ?></label>
+                  <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
+                    <option value="bariloche" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche'); ?>>Bariloche Aeropuerto</option>
+                    <option value="bariloche_centro" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche_centro'); ?>>Bariloche Centro</option>
+                  </select>
+                </div>
+                <div id="aba-devo-half" style="display:<?php echo $aba_devo_on ? 'block' : 'none'; ?>;">
+                  <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_ubicacion">Lugar de devolución</label>
+                  <select id="dropoff_ubicacion" name="dropoff_ubicacion" class="" placeholder="Devolución">
+                    <option value="bariloche" <?php selected($aba_devo_cookie, 'bariloche'); ?>>Bariloche Aeropuerto</option>
+                    <option value="bariloche_centro" <?php selected($aba_devo_cookie, 'bariloche_centro'); ?>>Bariloche Centro</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div class="reserva-search-field md:col-span-2">
@@ -144,6 +158,10 @@ if (!empty($modelos)) {
               </select>
             </div>
           </div>
+          <label class="aba-devo-check">
+            <input type="checkbox" id="aba-devo-toggle" <?php checked($aba_devo_on); ?> />
+            Devolver en otro lugar
+          </label>
         </div>
 
         <div class="flex justify-center">
@@ -153,6 +171,35 @@ if (!empty($modelos)) {
           </button>
         </div>
       </form>
+      <script>
+      /* "Devolver en otro lugar" (resultados): mismo comportamiento que la home */
+      (function () {
+        var cb   = document.getElementById('aba-devo-toggle');
+        var half = document.getElementById('aba-devo-half');
+        var lbl  = document.getElementById('aba-lbl-retiro');
+        if (!cb || !half) return;
+        function devoSel(){ return document.getElementById('dropoff_ubicacion'); }
+        function setCookie(v){ document.cookie = 'aba_devo=' + encodeURIComponent(v || '') + ';path=/;max-age=3600;SameSite=Lax'; }
+        function clearCookie(){ document.cookie = 'aba_devo=;path=/;max-age=0;SameSite=Lax'; }
+        function sync(){
+          var s = devoSel();
+          if (cb.checked) {
+            half.style.display = '';
+            if (lbl) lbl.textContent = 'Lugar de retiro';
+            if (s) setCookie(s.value);
+          } else {
+            half.style.display = 'none';
+            if (lbl) lbl.textContent = 'Lugar de retiro/devolución';
+            clearCookie();
+          }
+        }
+        cb.addEventListener('change', sync);
+        document.addEventListener('change', function (e) {
+          if (e.target && e.target.id === 'dropoff_ubicacion' && cb.checked) setCookie(e.target.value);
+        });
+        sync();
+      })();
+      </script>
     </div>
 
     <!-- Listado de modelos -->
