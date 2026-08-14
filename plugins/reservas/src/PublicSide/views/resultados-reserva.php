@@ -45,6 +45,7 @@ if (!empty($modelos)) {
       'transmission' => isset($modelo['Transmision']) ? esc_html($modelo['Transmision']) : null,
       'id_autos'     => intval($modelo['IdAutos']     ?? 0),
       'sena_pct'     => isset($modelo['Sena_Pct'])   ? intval($modelo['Sena_Pct'])  : null,
+      'km_incluidos' => (isset($modelo['Detalle']) && preg_match('/([\d.]+)\s*km\s*libres/i', $modelo['Detalle'], $mkm)) ? intval(str_replace('.', '', $mkm[1])) : 0,
     ];
     $cats[esc_html($modelo['Categoría'])] = isset($cats[esc_html($modelo['Categoría'])]) ? $cats[esc_html($modelo['Categoría'])] + 1 : 1;
     $price = aba_parse_ars($modelo['Tarifa_Final']);
@@ -223,6 +224,12 @@ if (!empty($modelos)) {
                   <?php echo esc_html($label); ?>
                 </span>
                 <?php endforeach; ?>
+                <?php if (!empty($car['km_incluidos'])): ?>
+                <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#679938;background:#f0f7e8;padding:3px 8px;border-radius:20px;" title="Kilómetros incluidos">
+                  <i class="fa fa-road" style="font-size:10px;"></i>
+                  <?php echo esc_html(number_format($car['km_incluidos'], 0, ',', '.')); ?> km
+                </span>
+                <?php endif; ?>
               </div>
               <?php endif; ?>
             </div>

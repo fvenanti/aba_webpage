@@ -284,6 +284,39 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
           <?php endforeach; ?>
         </div>
 
+        <!-- Kilometraje (solo si la API trae el dato) -->
+        <?php
+        $km = is_array($v['Km'] ?? null) ? $v['Km'] : null;
+        if ($km && !empty($km['incluidos_total'])):
+          $km_lang = function_exists('qtranxf_getLanguage') ? qtranxf_getLanguage() : 'es';
+          $km_t = [
+            'es' => ['Kilometraje', 'Incluidos', 'Por día', 'Excedente'],
+            'en' => ['Mileage', 'Included', 'Per day', 'Extra km'],
+            'pt' => ['Quilometragem', 'Incluídos', 'Por dia', 'Excedente'],
+          ];
+          $kt = $km_t[$km_lang] ?? $km_t['es'];
+        ?>
+        <div style="padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #F0F0F0;">
+          <p style="font-size:11px;font-weight:700;color:#90A3BF;text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px;"><?php echo esc_html($kt[0]); ?></p>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#596780;margin-bottom:3px;">
+            <span><?php echo esc_html($kt[1]); ?></span>
+            <span><?php echo number_format((float) $km['incluidos_total'], 0, ',', '.'); ?> km</span>
+          </div>
+          <?php if (!empty($km['incluidos_por_dia'])): ?>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#596780;margin-bottom:3px;">
+            <span><?php echo esc_html($kt[2]); ?></span>
+            <span><?php echo number_format((float) $km['incluidos_por_dia'], 0, ',', '.'); ?> km</span>
+          </div>
+          <?php endif; ?>
+          <?php if (!empty($km['excedente_por_km'])): ?>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#596780;margin-bottom:3px;">
+            <span><?php echo esc_html($kt[3]); ?></span>
+            <span><?php echo $fmt_precio((float) $km['excedente_por_km']); ?> / km</span>
+          </div>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <button id="aba-continuar"
           class="btn font-semibold! uppercase! <?php echo $pago_anticipado ? 'bg-[#2B8A7A]! hover:bg-[#236b5e]!' : 'bg-[#679938]! hover:bg-[#50d0bf]!'; ?> text-white! text-sm! transition-colors duration-200 border-0! w-full!">
           <?php echo $pago_anticipado ? 'Confirmar pago anticipado' : 'Continuar'; ?>
