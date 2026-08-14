@@ -7,7 +7,14 @@ if (!defined('ABSPATH')) exit;
 $WA_NUMBER = '5492944604766';
 
 $fmt_precio = fn(float $n): string => '$ ' . number_format($n, 0, ',', '.');
-$modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por estadía';
+// Helper de traducción (ES/EN/PT) con fallback a español.
+if (!function_exists('aba_t')) {
+  function aba_t($es, $en, $pt) {
+    $l = function_exists('qtranxf_getLanguage') ? qtranxf_getLanguage() : 'es';
+    return $l === 'en' ? $en : ($l === 'pt' ? $pt : $es);
+  }
+}
+$modo_label = fn(string $modo): string => $modo === 'dia' ? aba_t('Por día', 'Per day', 'Por dia') : aba_t('Por estadía', 'Per rental', 'Por locação');
 ?>
 <style>
 .aba-toggle-wrap { position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; }
@@ -129,17 +136,17 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
 
       <?php if (!empty($coberturas)): ?>
       <div class="bg-white rounded-lg" style="padding:24px;">
-        <h2 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 4px;">Coberturas</h2>
-        <p style="font-size:13px;color:#90A3BF;margin:0 0 20px;">Tu reserva ya incluye seguro básico. Podés mejorar la cobertura de forma opcional:</p>
+        <h2 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 4px;"><?php echo aba_t('Coberturas', 'Coverage', 'Coberturas'); ?></h2>
+        <p style="font-size:13px;color:#90A3BF;margin:0 0 20px;"><?php echo aba_t('Tu reserva ya incluye seguro básico. Podés mejorar la cobertura de forma opcional:', 'Your booking already includes basic insurance. You can optionally upgrade your coverage:', 'Sua reserva já inclui seguro básico. Você pode melhorar a cobertura de forma opcional:'); ?></p>
 
         <!-- Seguro básico incluido (no opcional) -->
         <div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid #F0F0F0;margin-bottom:4px;">
           <div style="flex:1;min-width:0;">
-            <p style="font-size:14px;font-weight:700;color:#1A202C;margin:0 0 3px;">Seguro básico</p>
-            <p style="font-size:12px;color:#596780;margin:0;line-height:1.5;">Cobertura estándar incluida en todas las reservas</p>
+            <p style="font-size:14px;font-weight:700;color:#1A202C;margin:0 0 3px;"><?php echo aba_t('Seguro básico', 'Basic insurance', 'Seguro básico'); ?></p>
+            <p style="font-size:12px;color:#596780;margin:0;line-height:1.5;"><?php echo aba_t('Cobertura estándar incluida en todas las reservas', 'Standard coverage included in every booking', 'Cobertura padrão incluída em todas as reservas'); ?></p>
           </div>
           <span style="display:inline-flex;align-items:center;gap:5px;background:#f0f7e8;color:#679938;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;flex-shrink:0;">
-            ✓ Incluido
+            ✓ <?php echo aba_t('Incluido', 'Included', 'Incluído'); ?>
           </span>
         </div>
 
@@ -170,7 +177,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
 
       <?php if (!empty($adicionales)): ?>
       <div class="bg-white rounded-lg" style="padding:24px;">
-        <h2 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 20px;">Adicionales</h2>
+        <h2 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 20px;"><?php echo aba_t('Adicionales', 'Add-ons', 'Adicionais'); ?></h2>
         <?php foreach ($adicionales as $i => $ad): ?>
         <div class="aba-ad-row"
              data-id="<?php echo esc_attr($ad['id']); ?>"
@@ -186,7 +193,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
           <?php $init_qty = $autoQtys[$ad['id']] ?? 0; $is_auto = $init_qty > 0; ?>
           <div style="text-align:right;flex-shrink:0;margin-right:14px;">
             <p style="font-size:14px;font-weight:700;color:#1A202C;margin:0;"><?php echo $fmt_precio($ad['precio']); ?></p>
-            <p style="font-size:11px;color:<?php echo $is_auto ? '#679938' : '#90A3BF'; ?>;font-weight:600;margin:0;"><?php echo $is_auto ? 'Automático' : $modo_label($ad['modo']); ?></p>
+            <p style="font-size:11px;color:<?php echo $is_auto ? '#679938' : '#90A3BF'; ?>;font-weight:600;margin:0;"><?php echo $is_auto ? aba_t('Automático', 'Automatic', 'Automático') : $modo_label($ad['modo']); ?></p>
           </div>
           <?php if ($is_auto): ?>
           <div style="display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:32px;background:#f0f7e8;border-radius:8px;border:1.5px solid #679938;font-size:13px;font-weight:700;color:#679938;padding:0 10px;">
@@ -216,18 +223,18 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
                style="width:80px;height:56px;object-fit:contain;background:#F6F7F9;border-radius:6px;flex-shrink:0;" />
           <div>
             <p style="font-size:15px;font-weight:700;color:#1A202C;margin:0 0 2px;"><?php echo esc_html($v['MODELO']); ?></p>
-            <p style="font-size:12px;color:#90A3BF;margin:0;">Categoría <?php echo esc_html($v['Categoría']); ?></p>
+            <p style="font-size:12px;color:#90A3BF;margin:0;"><?php echo aba_t('Categoría', 'Category', 'Categoria'); ?> <?php echo esc_html($v['Categoría']); ?></p>
           </div>
         </div>
 
         <!-- Fechas -->
         <div style="padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #F0F0F0;">
           <div style="display:flex;gap:8px;margin-bottom:6px;align-items:baseline;">
-            <span style="font-size:11px;font-weight:700;color:#679938;text-transform:uppercase;letter-spacing:.04em;min-width:76px;">Retiro</span>
+            <span style="font-size:11px;font-weight:700;color:#679938;text-transform:uppercase;letter-spacing:.04em;min-width:76px;"><?php echo aba_t('Retiro', 'Pickup', 'Retirada'); ?></span>
             <span style="font-size:12px;color:#596780;"><?php echo esc_html($res['sucursal_retiro']); ?> — <?php echo esc_html($fecha_retiro); ?></span>
           </div>
           <div style="display:flex;gap:8px;align-items:baseline;">
-            <span style="font-size:11px;font-weight:700;color:#679938;text-transform:uppercase;letter-spacing:.04em;min-width:76px;">Devolución</span>
+            <span style="font-size:11px;font-weight:700;color:#679938;text-transform:uppercase;letter-spacing:.04em;min-width:76px;"><?php echo aba_t('Devolución', 'Return', 'Devolução'); ?></span>
             <span style="font-size:12px;color:#596780;"><?php echo esc_html($res['sucursal_devolucion']); ?> — <?php echo esc_html($fecha_devol); ?></span>
           </div>
         </div>
@@ -236,7 +243,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
         <div style="padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #F0F0F0;">
           <?php if ($pago_anticipado): ?>
           <div class="aba-breakdown-row">
-            <span>Tarifa base (<?php echo $dias; ?> días)</span>
+            <span><?php echo aba_t('Tarifa base', 'Base rate', 'Tarifa base'); ?> (<?php echo $dias; ?> <?php echo aba_t('días', 'days', 'dias'); ?>)</span>
             <span>
               <?php echo $fmt_precio($tar['total_tarjeta'] * 0.80); ?>
               <small style="font-size:10px;color:#2B8A7A;"> -20%</small>
@@ -244,34 +251,34 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
           </div>
           <?php else: ?>
           <div class="aba-breakdown-row">
-            <span>Tarifa base (<?php echo $dias; ?> días)</span>
+            <span><?php echo aba_t('Tarifa base', 'Base rate', 'Tarifa base'); ?> (<?php echo $dias; ?> <?php echo aba_t('días', 'days', 'dias'); ?>)</span>
             <span>
               <?php echo $fmt_precio($tar['subtotal']); ?>
               <?php if ($tar['iva_incluido']): ?>
-              <small style="font-size:10px;color:#90A3BF;"> IVA inc.</small>
+              <small style="font-size:10px;color:#90A3BF;"> <?php echo aba_t('IVA inc.', 'VAT incl.', 'IVA incl.'); ?></small>
               <?php endif; ?>
             </span>
           </div>
           <?php endif; ?>
           <div id="aba-extras-breakdown"></div>
           <div class="aba-breakdown-row total-row">
-            <span><?php echo $pago_anticipado ? 'Total con descuento' : 'Total tarjeta'; ?></span>
+            <span><?php echo $pago_anticipado ? aba_t('Total con descuento', 'Total with discount', 'Total com desconto') : aba_t('Total tarjeta', 'Card total', 'Total cartão'); ?></span>
             <span id="aba-total-tarjeta"><?php echo $fmt_precio($pago_anticipado ? $tar['total_tarjeta'] * 0.80 : $tar['total_tarjeta']); ?></span>
           </div>
           <?php if (!$pago_anticipado && !empty($tar['descuento_efectivo']) && $tar['descuento_efectivo']['monto'] != 0): ?>
           <div class="aba-breakdown-row efectivo-row" style="margin-top:6px;">
-            <span>Total efectivo (<?php echo abs(intval($tar['descuento_efectivo']['pct'])); ?>% dto.)</span>
+            <span><?php echo aba_t('Total efectivo', 'Cash total', 'Total em dinheiro'); ?> (<?php echo abs(intval($tar['descuento_efectivo']['pct'])); ?>% <?php echo aba_t('dto.', 'off', 'desc.'); ?>)</span>
             <span id="aba-total-efectivo"><?php echo $fmt_precio($tar['total_efectivo']); ?></span>
           </div>
           <?php endif; ?>
           <?php if ($pago_anticipado): ?>
           <div class="aba-breakdown-row" style="margin-top:10px;padding-top:10px;border-top:1px solid #E2E8F0;color:#2B8A7A;font-weight:700;font-size:14px;">
-            <span>Pago total anticipado</span>
+            <span><?php echo aba_t('Pago total anticipado', 'Full advance payment', 'Pagamento total antecipado'); ?></span>
             <span id="aba-sena-monto"><?php echo $fmt_precio($tar['total_tarjeta'] * 0.80); ?></span>
           </div>
           <?php elseif (!empty($tar['sena_pct'])): ?>
           <div class="aba-breakdown-row" style="margin-top:10px;padding-top:10px;border-top:1px solid #E2E8F0;color:#679938;font-weight:700;font-size:14px;">
-            <span>Seña requerida (<?php echo intval($tar['sena_pct']); ?>%)</span>
+            <span><?php echo aba_t('Seña requerida', 'Required deposit', 'Sinal exigido'); ?> (<?php echo intval($tar['sena_pct']); ?>%)</span>
             <span id="aba-sena-monto"><?php echo $fmt_precio($tar['total_tarjeta'] * $tar['sena_pct'] / 100); ?></span>
           </div>
           <?php endif; ?>
@@ -279,8 +286,8 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
 
         <!-- Franquicias -->
         <div style="padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #F0F0F0;">
-          <p style="font-size:11px;font-weight:700;color:#90A3BF;text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px;">Franquicias</p>
-          <?php foreach ([['Daños', 'danos', $franq['danos']], ['Vuelco', 'vuelco', $franq['vuelco']], ['Robo', 'robo', $franq['robo']]] as [$label, $fkey, $val]): ?>
+          <p style="font-size:11px;font-weight:700;color:#90A3BF;text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px;"><?php echo aba_t('Franquicias', 'Deductibles', 'Franquias'); ?></p>
+          <?php foreach ([[aba_t('Daños', 'Damage', 'Danos'), 'danos', $franq['danos']], [aba_t('Vuelco', 'Rollover', 'Capotamento'), 'vuelco', $franq['vuelco']], [aba_t('Robo', 'Theft', 'Roubo'), 'robo', $franq['robo']]] as [$label, $fkey, $val]): ?>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:#596780;margin-bottom:3px;">
             <span><?php echo esc_html($label); ?></span>
             <span class="aba-franq-val" data-franq="<?php echo esc_attr($fkey); ?>" data-original="<?php echo esc_attr($val); ?>"><?php echo $fmt_precio($val); ?></span>
@@ -323,7 +330,7 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
 
         <button id="aba-continuar"
           class="btn font-semibold! uppercase! <?php echo $pago_anticipado ? 'bg-[#2B8A7A]! hover:bg-[#236b5e]!' : 'bg-[#679938]! hover:bg-[#50d0bf]!'; ?> text-white! text-sm! transition-colors duration-200 border-0! w-full!">
-          <?php echo $pago_anticipado ? 'Confirmar pago anticipado' : 'Continuar'; ?>
+          <?php echo $pago_anticipado ? aba_t('Confirmar pago anticipado', 'Confirm advance payment', 'Confirmar pagamento antecipado') : aba_t('Continuar', 'Continue', 'Continuar'); ?>
         </button>
 
       </div>
@@ -405,52 +412,52 @@ window.abaCotizacion = <?php echo wp_json_encode([
 
     <!-- PASO 1: datos del cliente -->
     <div id="aba-paso-datos" style="padding:32px 24px 28px;overflow-y:auto;">
-      <h3 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 4px;">Confirmar reserva</h3>
+      <h3 style="font-size:18px;font-weight:700;color:#1A202C;margin:0 0 4px;"><?php echo aba_t('Confirmar reserva', 'Confirm booking', 'Confirmar reserva'); ?></h3>
       <p style="font-size:13px;color:#90A3BF;margin:0 0 20px;">
-        <?php echo $pago_anticipado ? 'Completá tus datos para el pago anticipado (20% dto.)' : 'Completá tus datos para pagar la seña'; ?>
+        <?php echo $pago_anticipado ? aba_t('Completá tus datos para el pago anticipado (20% dto.)', 'Fill in your details for the advance payment (20% off)', 'Preencha seus dados para o pagamento antecipado (20% desc.)') : aba_t('Completá tus datos para pagar la seña', 'Fill in your details to pay the deposit', 'Preencha seus dados para pagar o sinal'); ?>
       </p>
 
       <div style="background:<?php echo $pago_anticipado ? '#e8f4f3' : '#f0f7e8'; ?>;border-radius:10px;padding:14px 18px;margin-bottom:24px;">
         <p style="font-size:11px;font-weight:700;color:<?php echo $pago_anticipado ? '#2B8A7A' : '#679938'; ?>;text-transform:uppercase;letter-spacing:.05em;margin:0 0 4px;">
-          <?php echo $pago_anticipado ? 'Total a pagar (20% dto.)' : 'Seña a pagar'; ?>
+          <?php echo $pago_anticipado ? aba_t('Total a pagar (20% dto.)', 'Total to pay (20% off)', 'Total a pagar (20% desc.)') : aba_t('Seña a pagar', 'Deposit to pay', 'Sinal a pagar'); ?>
         </p>
         <p id="aba-sena-modal-monto" style="font-size:26px;font-weight:700;color:#1A202C;margin:0;"></p>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
-          <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Nombre *</label>
+          <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;"><?php echo aba_t('Nombre', 'First name', 'Nome'); ?> *</label>
           <input id="aba-campo-nombre" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
         </div>
         <div>
-          <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Apellido *</label>
+          <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;"><?php echo aba_t('Apellido', 'Last name', 'Sobrenome'); ?> *</label>
           <input id="aba-campo-apellido" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
         </div>
       </div>
       <div style="margin-bottom:14px;">
-        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">DNI *</label>
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;"><?php echo aba_t('DNI', 'ID / Passport', 'Documento'); ?> *</label>
         <input id="aba-campo-dni" type="text" inputmode="numeric" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
       </div>
       <div style="margin-bottom:14px;">
-        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Email *</label>
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;"><?php echo aba_t('Email', 'Email', 'E-mail'); ?> *</label>
         <input id="aba-campo-email" type="email" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
       </div>
       <div style="margin-bottom:24px;">
-        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;">Teléfono *</label>
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;"><?php echo aba_t('Teléfono', 'Phone', 'Telefone'); ?> *</label>
         <input id="aba-campo-tel" type="tel" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
       </div>
 
       <p id="aba-datos-error" style="display:none;color:#E53E3E;font-size:12px;margin-bottom:12px;"></p>
       <button id="aba-datos-submit" type="button" disabled
         style="width:100%;padding:13px;background:#679938;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;cursor:not-allowed;opacity:.45;">
-        Ir al pago →
+        <?php echo aba_t('Ir al pago', 'Go to payment', 'Ir para o pagamento'); ?> →
       </button>
     </div>
 
     <!-- PASO 2: iframe Fiserv -->
     <div id="aba-paso-pago" style="display:none;flex-direction:column;flex:1;min-height:0;">
       <div style="padding:12px 20px;border-bottom:1px solid #F0F0F0;font-size:13px;color:#596780;">
-        Ingresá los datos de tu tarjeta
+        <?php echo aba_t('Ingresá los datos de tu tarjeta', 'Enter your card details', 'Insira os dados do seu cartão'); ?>
       </div>
       <iframe id="aba-fiserv-iframe" name="aba-fiserv-frame"
         style="width:100%;height:520px;border:none;display:block;flex:1;"></iframe>
@@ -460,16 +467,16 @@ window.abaCotizacion = <?php echo wp_json_encode([
     <div id="aba-paso-resultado" style="display:none;padding:48px 32px;text-align:center;">
       <div id="aba-res-ok" style="display:none;">
         <div style="width:64px;height:64px;background:<?php echo $pago_anticipado ? '#e8f4f3' : '#f0f7e8'; ?>;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:<?php echo $pago_anticipado ? '#2B8A7A' : '#679938'; ?>;">✓</div>
-        <h3 style="font-size:20px;font-weight:700;color:#1A202C;margin:0 0 10px;"><?php echo $pago_anticipado ? '¡Pago recibido!' : '¡Seña recibida!'; ?></h3>
-        <p style="color:#596780;font-size:14px;line-height:1.6;margin:0;">Te enviamos la confirmación por email.<br>Tu reserva está confirmada. Te contactaremos para completar tus datos.</p>
+        <h3 style="font-size:20px;font-weight:700;color:#1A202C;margin:0 0 10px;"><?php echo $pago_anticipado ? aba_t('¡Pago recibido!', 'Payment received!', 'Pagamento recebido!') : aba_t('¡Seña recibida!', 'Deposit received!', 'Sinal recebido!'); ?></h3>
+        <p style="color:#596780;font-size:14px;line-height:1.6;margin:0;"><?php echo aba_t('Te enviamos la confirmación por email.<br>Tu reserva está confirmada. Te contactaremos para completar tus datos.', 'We\'ve sent you the confirmation by email.<br>Your booking is confirmed. We\'ll contact you to complete your details.', 'Enviamos a confirmação por e-mail.<br>Sua reserva está confirmada. Entraremos em contato para completar seus dados.'); ?></p>
       </div>
       <div id="aba-res-error" style="display:none;">
         <div style="width:64px;height:64px;background:#FFF5F5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:#E53E3E;">✗</div>
-        <h3 style="font-size:20px;font-weight:700;color:#1A202C;margin:0 0 10px;">Error en el pago</h3>
-        <p style="color:#596780;font-size:14px;line-height:1.6;margin:0 0 20px;">No se pudo procesar el pago.</p>
+        <h3 style="font-size:20px;font-weight:700;color:#1A202C;margin:0 0 10px;"><?php echo aba_t('Error en el pago', 'Payment error', 'Erro no pagamento'); ?></h3>
+        <p style="color:#596780;font-size:14px;line-height:1.6;margin:0 0 20px;"><?php echo aba_t('No se pudo procesar el pago.', 'The payment could not be processed.', 'Não foi possível processar o pagamento.'); ?></p>
         <button id="aba-reintentar" type="button"
           style="padding:10px 24px;background:#679938;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
-          Intentar de nuevo
+          <?php echo aba_t('Intentar de nuevo', 'Try again', 'Tentar novamente'); ?>
         </button>
       </div>
     </div>
