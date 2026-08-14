@@ -92,7 +92,8 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
   // Cantidades automáticas
   $hora_ini_int  = intval($params['hora_inicio'] ?? 9);
   $hora_fin_int  = intval($params['hora_fin']    ?? 9);
-  $ubicacion_raw = strtolower($params['ubicacion_raw'] ?? '');
+  $ubicacion_raw        = strtolower($params['ubicacion_raw'] ?? '');
+  $ubicacion_devolucion = strtolower($params['ubicacion_devolucion'] ?? '');
   $autoQtys = [];
   foreach ($adicionales as $ad) {
     if (($ad['clave'] ?? '') === 'entrega_fuera_hora') {
@@ -100,7 +101,10 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? 'Por día' : 'Por es
            + ($hora_fin_int  < 8 || $hora_fin_int  >= 20 ? 1 : 0);
       if ($qty > 0) $autoQtys[$ad['id']] = $qty;
     }
-    if (($ad['clave'] ?? '') === 'entrega_aeropuerto' && in_array($ubicacion_raw, ['bariloche', 'bariloche_aeropuerto'], true)) {
+    // Tasa Aeropuerto: se aplica UNA sola vez si Aero está en el retiro O en la devolución.
+    if (($ad['clave'] ?? '') === 'entrega_aeropuerto'
+        && (in_array($ubicacion_raw, ['bariloche', 'bariloche_aeropuerto'], true)
+            || in_array($ubicacion_devolucion, ['bariloche', 'bariloche_aeropuerto'], true))) {
       $autoQtys[$ad['id']] = 1;
     }
   }

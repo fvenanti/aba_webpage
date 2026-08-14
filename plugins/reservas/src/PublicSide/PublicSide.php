@@ -451,6 +451,8 @@ class PublicSide
     $sucursal        = sanitize_text_field($_GET['sucursal']        ?? 'Bariloche');
     $ubicacion_raw   = strtolower(sanitize_text_field($_GET['ubicacion'] ?? ''));
     $pago_anticipado = !empty($_GET['pago_anticipado']);
+    // "Devolver en otro lugar" viaja por cookie desde el form. Vacío = devolución igual al retiro.
+    $ubicacion_devolucion = strtolower(sanitize_text_field($_COOKIE['aba_devo'] ?? ''));
 
     if (!$id_autos || !$inicio || !$fin) {
       return $this->render_view('adicionales.php', [
@@ -460,12 +462,12 @@ class PublicSide
       ]);
     }
 
-    $result = $this->obtener_cotizacion($id_autos, $inicio, $fin, $hora_inicio, $hora_fin, $sucursal);
+    $result = $this->obtener_cotizacion($id_autos, $inicio, $fin, $hora_inicio, $hora_fin, $sucursal, $ubicacion_devolucion);
 
     return $this->render_view('adicionales.php', [
       'cotizacion' => $result['data'] ?? null,
       'error_code' => $result['error'] ?? null,
-      'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal', 'ubicacion_raw', 'pago_anticipado'),
+      'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal', 'ubicacion_raw', 'ubicacion_devolucion', 'pago_anticipado'),
     ]);
   }
 
@@ -502,13 +504,14 @@ class PublicSide
     $hora_ret     = intval($payload['hora_retiro']       ?? 9);
     $hora_dev     = intval($payload['hora_devolucion']   ?? 9);
     $sucursal     = sanitize_text_field($payload['sucursal_retiro']  ?? '');
+    $sucursal_dev = sanitize_text_field($payload['sucursal_devolucion'] ?? '');
 
     if (!$id_autos || !$fecha_retiro || !$fecha_dev) {
       wp_send_json_error(['message' => 'Datos de reserva incompletos.'], 400);
       return;
     }
 
-    $cotizacion = $this->obtener_cotizacion($id_autos, $fecha_retiro, $fecha_dev, $hora_ret, $hora_dev, $sucursal);
+    $cotizacion = $this->obtener_cotizacion($id_autos, $fecha_retiro, $fecha_dev, $hora_ret, $hora_dev, $sucursal, $sucursal_dev);
     if (isset($cotizacion['error'])) {
       wp_send_json_error(['message' => 'No se pudo verificar el precio. Intentá de nuevo.'], 500);
       return;
@@ -914,17 +917,20 @@ class PublicSide
     wp_mail($admin_mail, $subject, $body, $headers);
   }
 
-  private function obtener_cotizacion(int $id_autos, string $inicio, string $fin, int $hora_inicio, int $hora_fin, string $sucursal): array
+  private function obtener_cotizacion(int $id_autos, string $inicio, string $fin, int $hora_inicio, int $hora_fin, string $sucursal, ?string $sucursal_devolucion = null): array
   {
-    // Un solo selector en el form → retiro = devolución.
     $sucursal = $this->normalizar_sucursal($sucursal);
+    // Devolución: si no se pasó (o viene vacía), es igual al retiro.
+    $sucursal_dev = ($sucursal_devolucion !== null && $sucursal_devolucion !== '')
+      ? $this->normalizar_sucursal($sucursal_devolucion)
+      : $sucursal;
     $url = "https://aba.benvert.com.ar/api/cotizacion-detalle/{$id_autos}?" . http_build_query([
       'inicio'              => $inicio,
       'fin'                 => $fin,
       'hora_inicio'         => $hora_inicio,
       'hora_fin'            => $hora_fin,
       'sucursal_retiro'     => $sucursal,
-      'sucursal_devolucion' => $sucursal,
+      'sucursal_devolucion' => $sucursal_dev,
     ]);
 
     $response = wp_remote_get($url, [

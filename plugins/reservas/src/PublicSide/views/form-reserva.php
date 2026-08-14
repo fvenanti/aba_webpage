@@ -22,9 +22,13 @@ if (!function_exists('aba_reserva_render_time_options')) {
 <style>
 .aba-fields-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
+.aba-lugar-field { grid-column: span 2; }
+.aba-lugar-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.aba-devo-check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; font-weight: 600; color: #1A202C; cursor: pointer; user-select: none; }
+.aba-devo-check input { width: 16px; height: 16px; cursor: pointer; accent-color: #679938; }
 .reserva-search-field {
   border: 2px solid #679938 !important;
   border-radius: 8px !important;
@@ -86,6 +90,8 @@ if (!function_exists('aba_reserva_render_time_options')) {
 }
 @media (max-width: 767px) {
   .aba-fields-grid { grid-template-columns: 1fr !important; }
+  .aba-lugar-field { grid-column: span 1 !important; }
+  .aba-lugar-inner { grid-template-columns: 1fr !important; }
   .aba-form-inner { flex-direction: column !important; }
   .aba-form-btn   { width: 100% !important; }
   .aba-form-btn button { width: 100% !important; }
@@ -120,12 +126,23 @@ if (!function_exists('aba_reserva_render_time_options')) {
 
         <div style="flex:1;min-width:0;">
           <div class="aba-fields-grid">
-            <div class="reserva-search-field">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de recogida / devolución</label>
-              <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
-                <option value="bariloche" selected>Bariloche Aeropuerto</option>
-                <option value="bariloche_centro">Bariloche Centro</option>
-              </select>
+            <div class="reserva-search-field aba-lugar-field">
+              <div class="aba-lugar-inner">
+                <div>
+                  <label id="aba-lbl-retiro" class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion">Lugar de retiro/devolución</label>
+                  <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
+                    <option value="bariloche" selected>Bariloche Aeropuerto</option>
+                    <option value="bariloche_centro">Bariloche Centro</option>
+                  </select>
+                </div>
+                <div id="aba-devo-half" style="display:none;">
+                  <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_ubicacion">Lugar de devolución</label>
+                  <select id="dropoff_ubicacion" name="dropoff_ubicacion" class="" placeholder="Devolución" disabled>
+                    <option value="bariloche" selected>Bariloche Aeropuerto</option>
+                    <option value="bariloche_centro">Bariloche Centro</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div class="reserva-search-field">
@@ -150,6 +167,10 @@ if (!function_exists('aba_reserva_render_time_options')) {
               </select>
             </div>
           </div>
+          <label class="aba-devo-check">
+            <input type="checkbox" id="aba-devo-toggle" />
+            Devolver en otro lugar
+          </label>
         </div>
 
         <div class="aba-form-btn" style="flex-shrink:0;display:flex;align-items:center;">
@@ -165,6 +186,35 @@ if (!function_exists('aba_reserva_render_time_options')) {
 
   </form>
 </section>
+<script>
+/* "Devolver en otro lugar": muestra el 2º selector y lleva la devolución por cookie */
+(function () {
+  var cb   = document.getElementById('aba-devo-toggle');
+  var half = document.getElementById('aba-devo-half');
+  var lbl  = document.getElementById('aba-lbl-retiro');
+  if (!cb || !half) return;
+  function devoSel(){ return document.getElementById('dropoff_ubicacion'); }
+  function setCookie(v){ document.cookie = 'aba_devo=' + encodeURIComponent(v || '') + ';path=/;max-age=3600;SameSite=Lax'; }
+  function clearCookie(){ document.cookie = 'aba_devo=;path=/;max-age=0;SameSite=Lax'; }
+  function sync(){
+    var s = devoSel();
+    if (cb.checked) {
+      half.style.display = '';
+      if (lbl) lbl.textContent = 'Lugar de retiro';
+      if (s) setCookie(s.value);
+    } else {
+      half.style.display = 'none';
+      if (lbl) lbl.textContent = 'Lugar de retiro/devolución';
+      clearCookie();
+    }
+  }
+  cb.addEventListener('change', sync);
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'dropoff_ubicacion' && cb.checked) setCookie(e.target.value);
+  });
+  sync();
+})();
+</script>
 <script>
 (function () {
   function initStickyForm() {
