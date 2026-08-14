@@ -4,6 +4,14 @@ if (!defined('ABSPATH'))
 /** @var array $params */
 /** @var array $modelos */
 
+// Helper de traducción (ES/EN/PT) con fallback a español.
+if (!function_exists('aba_t')) {
+  function aba_t($es, $en, $pt) {
+    $l = function_exists('qtranxf_getLanguage') ? qtranxf_getLanguage() : 'es';
+    return $l === 'en' ? $en : ($l === 'pt' ? $pt : $es);
+  }
+}
+
 if (!function_exists('aba_reserva_render_time_options')) {
   function aba_reserva_render_time_options(string $selected = '12:00'): string
   {
@@ -78,7 +86,7 @@ if (!empty($modelos)) {
       <i class="fas fa-chevron-down"></i>
     </button>
     <div class="max-md:pt-6">
-      <span class='text-xl! text-[#1A202C]! font-bold mb-7! mt-0! p-0! block'>Categoría</span>
+      <span class='text-xl! text-[#1A202C]! font-bold mb-7! mt-0! p-0! block'><?php echo aba_t('Categoría', 'Category', 'Categoria'); ?></span>
       <div class="flex flex-col gap-8">
         <?php
         foreach ($cats as $name => $count): ?>
@@ -120,14 +128,14 @@ if (!empty($modelos)) {
             <div class="reserva-search-field md:col-span-2">
               <div class="aba-lugar-inner">
                 <div>
-                  <label id="aba-lbl-retiro" class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion"><?php echo $aba_devo_on ? 'Lugar de retiro' : 'Lugar de retiro/devolución'; ?></label>
+                  <label id="aba-lbl-retiro" class="block mb-2 font-bold text-[#1A202C]!" for="pickup_ubicacion"><?php echo $aba_devo_on ? aba_t('Lugar de retiro', 'Pickup location', 'Local de retirada') : aba_t('Lugar de retiro/devolución', 'Pickup / return location', 'Local de retirada / devolução'); ?></label>
                   <select id="pickup_ubicacion" name="pickup_ubicacion" class="" placeholder="Ubicación">
                     <option value="bariloche" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche'); ?>>Bariloche Aeropuerto</option>
                     <option value="bariloche_centro" <?php selected(($params['pickup_ubicacion'] ?? ''), 'bariloche_centro'); ?>>Bariloche Centro</option>
                   </select>
                 </div>
                 <div id="aba-devo-half" style="display:<?php echo $aba_devo_on ? 'block' : 'none'; ?>;">
-                  <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_ubicacion">Lugar de devolución</label>
+                  <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_ubicacion"><?php echo aba_t('Lugar de devolución', 'Return location', 'Local de devolução'); ?></label>
                   <select id="dropoff_ubicacion" name="dropoff_ubicacion" class="" placeholder="Devolución">
                     <option value="bariloche" <?php selected($aba_devo_cookie, 'bariloche'); ?>>Bariloche Aeropuerto</option>
                     <option value="bariloche_centro" <?php selected($aba_devo_cookie, 'bariloche_centro'); ?>>Bariloche Centro</option>
@@ -137,7 +145,7 @@ if (!empty($modelos)) {
             </div>
 
             <div class="reserva-search-field md:col-span-2">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="reserva_rango">Fecha de Retiro/Devolución</label>
+              <label class="block mb-2 font-bold text-[#1A202C]!" for="reserva_rango"><?php echo aba_t('Fecha de Retiro/Devolución', 'Pickup / return date', 'Data de retirada / devolução'); ?></label>
               <input type="text" class="w-full! py-2! px-0! h-10! shadow-none! placeholder:text-[#90A3BF]! text-sm!" id="reserva_rango"
                 placeholder="Seleccionar rango" autocomplete="off" />
               <input type="hidden" id="pickup_fecha" name="pickup_fecha"
@@ -147,14 +155,14 @@ if (!empty($modelos)) {
             </div>
 
             <div class="reserva-search-field md:col-span-1">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_horario">Hora de entrega</label>
+              <label class="block mb-2 font-bold text-[#1A202C]!" for="pickup_horario"><?php echo aba_t('Hora de entrega', 'Pickup time', 'Horário de retirada'); ?></label>
               <select id="pickup_horario" name="pickup_horario" class="" placeholder="Hora de entrega">
                 <?php echo aba_reserva_render_time_options($params['pickup_horario'] ?? '12:00'); ?>
               </select>
             </div>
 
             <div class="reserva-search-field md:col-span-1">
-              <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_horario">Hora de devolución</label>
+              <label class="block mb-2 font-bold text-[#1A202C]!" for="dropoff_horario"><?php echo aba_t('Hora de devolución', 'Return time', 'Horário de devolução'); ?></label>
               <select id="dropoff_horario" name="dropoff_horario" class="" placeholder="Hora de devolución">
                 <?php echo aba_reserva_render_time_options($params['dropoff_horario'] ?? '12:00'); ?>
               </select>
@@ -162,17 +170,23 @@ if (!empty($modelos)) {
           </div>
           <label class="aba-devo-check">
             <input type="checkbox" id="aba-devo-toggle" <?php checked($aba_devo_on); ?> />
-            Devolver en otro lugar
+            <?php echo aba_t('Devolver en otro lugar', 'Return at a different location', 'Devolver em outro local'); ?>
           </label>
         </div>
 
         <div class="flex justify-center">
           <button type="submit"
             class="btn font-semibold! uppercase! bg-[#679938]! text-white! hover:bg-[#50d0bf]! text-sm! transition-colors duration-200 border-0!">
-            Actualizar búsqueda
+            <?php echo aba_t('Actualizar búsqueda', 'Update search', 'Atualizar busca'); ?>
           </button>
         </div>
       </form>
+      <script>
+      window.abaI18n = <?php echo wp_json_encode([
+        'retiro'     => aba_t('Lugar de retiro', 'Pickup location', 'Local de retirada'),
+        'retiroDevo' => aba_t('Lugar de retiro/devolución', 'Pickup / return location', 'Local de retirada / devolução'),
+      ]); ?>;
+      </script>
       <script>
       /* "Devolver en otro lugar" (resultados): mismo comportamiento que la home */
       (function () {
@@ -187,11 +201,11 @@ if (!empty($modelos)) {
           var s = devoSel();
           if (cb.checked) {
             half.style.display = '';
-            if (lbl) lbl.textContent = 'Lugar de retiro';
+            if (lbl) lbl.textContent = (window.abaI18n && window.abaI18n.retiro) || 'Lugar de retiro';
             if (s) setCookie(s.value);
           } else {
             half.style.display = 'none';
-            if (lbl) lbl.textContent = 'Lugar de retiro/devolución';
+            if (lbl) lbl.textContent = (window.abaI18n && window.abaI18n.retiroDevo) || 'Lugar de retiro/devolución';
             clearCookie();
           }
         }
@@ -247,7 +261,7 @@ if (!empty($modelos)) {
             <!-- Info centro -->
             <div style="flex:1;min-width:0;">
               <p style="font-size:11px;font-weight:700;color:#679938;text-transform:uppercase;letter-spacing:.06em;margin:0 0 2px;">
-                Categoría <?php echo esc_html($car['category']); ?>
+                <?php echo aba_t('Categoría', 'Category', 'Categoria'); ?> <?php echo esc_html($car['category']); ?>
               </p>
               <h3 style="font-size:17px;font-weight:700;color:#1A202C;margin:0 0 10px;">
                 <?php echo esc_html($car['model']); ?>
@@ -274,7 +288,7 @@ if (!empty($modelos)) {
                 </span>
                 <?php endforeach; ?>
                 <?php if (!empty($car['km_incluidos'])): ?>
-                <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#679938;background:#f0f7e8;padding:3px 8px;border-radius:20px;" title="Kilómetros incluidos">
+                <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#679938;background:#f0f7e8;padding:3px 8px;border-radius:20px;" title="<?php echo esc_attr(aba_t('Kilómetros incluidos', 'Included kilometers', 'Quilômetros incluídos')); ?>">
                   <i class="fa fa-road" style="font-size:10px;"></i>
                   <?php echo esc_html(number_format($car['km_incluidos'], 0, ',', '.')); ?> km
                 </span>
