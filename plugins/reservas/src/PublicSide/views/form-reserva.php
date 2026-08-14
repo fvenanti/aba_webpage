@@ -334,6 +334,13 @@ if (!function_exists('aba_reserva_render_time_options')) {
       fp.set('minDate', toISO(addDays(ba, 2)));
     }
 
+    // Fechas por defecto: retiro mañana (o lunes si sáb después de 12hs) y devolución +3 días.
+    // Solo si el usuario todavía no eligió fechas.
+    if (!fp.selectedDates || fp.selectedDates.length < 2) {
+      var startDefault = (baDay === 6 && baHour >= 12) ? addDays(ba, 2) : addDays(ba, 1);
+      fp.setDate([toISO(startDefault), toISO(addDays(startDefault, 3))], true);
+    }
+
     // Reglas 4 y 5: máximo 30 días / mínimo 3 días de alquiler
     fp.config.onChange.push(function (sel) {
       var cap = toISO(addMonths(getBa(), 4));
