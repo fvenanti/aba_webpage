@@ -216,6 +216,35 @@ if (!empty($modelos)) {
         sync();
       })();
       </script>
+      <script>
+      /* Estadía mínima 3 días (resultados): frena el submit si no cumple. El servidor igual revalida. */
+      (function () {
+        var pf0 = document.getElementById('pickup_fecha');
+        var form = pf0 ? pf0.form : null;
+        if (!form) return;
+        var MSG = <?php echo wp_json_encode(aba_t(
+          'La estadía mínima es de 3 días. Con 2 días de calendario, la devolución debe ser al menos 4 hs más tarde que el retiro.',
+          'Minimum rental is 3 days. With 2 calendar days, the return must be at least 4 hours later than pickup.',
+          'A locação mínima é de 3 dias. Com 2 dias de calendário, a devolução deve ser pelo menos 4 horas mais tarde que a retirada.'
+        )); ?>;
+        function mins(t){ t = (t || '12:00').split(':'); return (parseInt(t[0],10)||0)*60 + (parseInt(t[1],10)||0); }
+        function ok(pf, df, pt, dt){
+          var p = new Date(pf + 'T00:00:00'), d = new Date(df + 'T00:00:00');
+          if (isNaN(p) || isNaN(d)) return true;
+          var diff = Math.round((d - p) / 86400000);
+          if (diff >= 3) return true;
+          if (diff <= 1) return false;
+          return (mins(dt) - mins(pt)) >= 240;
+        }
+        form.addEventListener('submit', function (e) {
+          var pf = (document.getElementById('pickup_fecha')   || {}).value;
+          var df = (document.getElementById('dropoff_fecha')  || {}).value;
+          var pt = (document.getElementById('pickup_horario') || {}).value;
+          var dt = (document.getElementById('dropoff_horario')|| {}).value;
+          if (pf && df && !ok(pf, df, pt, dt)) { e.preventDefault(); alert(MSG); }
+        });
+      })();
+      </script>
     </div>
 
     <!-- Listado de modelos -->

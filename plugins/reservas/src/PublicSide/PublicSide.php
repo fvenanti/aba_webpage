@@ -441,6 +441,21 @@ class PublicSide
   /**
    * Shortcode [aba_cotizacion]
    */
+  /**
+   * Estadía mínima (espejo server-side de meetsMinDays del front).
+   * >=3 días calendario OK; <=1 nunca; ==2 OK solo si devolución >=4hs después del retiro.
+   */
+  private function meets_min_days(string $fecha_ret, string $fecha_dev, int $hora_ret, int $hora_dev): bool
+  {
+    $r = strtotime($fecha_ret);
+    $d = strtotime($fecha_dev);
+    if ($r === false || $d === false) return false;
+    $diff = (int) round(($d - $r) / 86400);
+    if ($diff >= 3) return true;
+    if ($diff <= 1) return false;
+    return ($hora_dev - $hora_ret) >= 4;
+  }
+
   public function shortcode_cotizacion(): string
   {
     $id_autos        = intval($_GET['id_autos']        ?? 0);
@@ -458,6 +473,14 @@ class PublicSide
       return $this->render_view('adicionales.php', [
         'cotizacion' => null,
         'error_code' => 'params',
+        'params'     => [],
+      ]);
+    }
+
+    if (!$this->meets_min_days($inicio, $fin, $hora_inicio, $hora_fin)) {
+      return $this->render_view('adicionales.php', [
+        'cotizacion' => null,
+        'error_code' => 'min_dias',
         'params'     => [],
       ]);
     }
@@ -508,6 +531,11 @@ class PublicSide
 
     if (!$id_autos || !$fecha_retiro || !$fecha_dev) {
       wp_send_json_error(['message' => 'Datos de reserva incompletos.'], 400);
+      return;
+    }
+
+    if (!$this->meets_min_days($fecha_retiro, $fecha_dev, $hora_ret, $hora_dev)) {
+      wp_send_json_error(['message' => 'La estadía mínima es de 3 días. Ajustá las fechas.'], 400);
       return;
     }
 

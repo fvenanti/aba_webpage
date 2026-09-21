@@ -60,6 +60,13 @@ $modo_label = fn(string $modo): string => $modo === 'dia' ? aba_t('Por día', 'P
   </a>
 </div>
 
+<?php elseif ($error_code === 'min_dias'): ?>
+<div style="text-align:center;padding:80px 24px;">
+  <p style="font-size:20px;font-weight:700;color:#1A202C;margin:0 0 10px;"><?php echo aba_t('Estadía mínima: 3 días', 'Minimum rental: 3 days', 'Locação mínima: 3 dias'); ?></p>
+  <p style="color:#596780;margin:0 0 32px;"><?php echo aba_t('El alquiler mínimo es de 3 días. Volvé y ajustá las fechas.', 'The minimum rental is 3 days. Go back and adjust the dates.', 'A locação mínima é de 3 dias. Volte e ajuste as datas.'); ?></p>
+  <a href="javascript:history.back()" style="color:#679938;font-weight:600;">← <?php echo aba_t('Volver', 'Back', 'Voltar'); ?></a>
+</div>
+
 <?php elseif ($error_code || !$cotizacion): ?>
 <div style="text-align:center;padding:80px 24px;">
   <p style="color:#596780;margin:0 0 20px;">No se pudo cargar la cotización. Intentá nuevamente.</p>
