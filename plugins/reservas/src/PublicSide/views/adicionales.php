@@ -452,6 +452,27 @@ window.abaCotizacion = <?php echo wp_json_encode([
       <div style="margin-bottom:24px;">
         <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin-bottom:5px;"><?php echo aba_t('Teléfono', 'Phone', 'Telefone'); ?> *</label>
         <input id="aba-campo-tel" type="tel" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;" />
+        <label style="font-size:12px;font-weight:600;color:#596780;display:block;margin:12px 0 5px;"><?php echo aba_t('País', 'Country', 'País'); ?> *</label>
+        <select id="aba-campo-pais" style="width:100%;padding:10px 12px;border:1.5px solid #CBD5E0;border-radius:8px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
+          <?php
+            $aba_paises  = isset($paises) && is_array($paises) && $paises ? $paises : ['Argentina'];
+            $aba_frec    = ['Brasil', 'Chile', 'Uruguay', 'Estados Unidos', 'España', 'Alemania, Rep. Fed.', 'Francia', 'Reino Unido', 'Italia', 'Israel'];
+            $aba_frec_ok = array_values(array_intersect($aba_frec, $aba_paises));
+          ?>
+          <option value="Argentina" selected>Argentina</option>
+          <?php if ($aba_frec_ok): ?>
+          <optgroup label="<?php echo esc_attr(aba_t('Más frecuentes', 'Most common', 'Mais frequentes')); ?>">
+            <?php foreach ($aba_frec_ok as $pn): ?>
+            <option value="<?php echo esc_attr($pn); ?>"><?php echo esc_html($pn); ?></option>
+            <?php endforeach; ?>
+          </optgroup>
+          <?php endif; ?>
+          <optgroup label="<?php echo esc_attr(aba_t('Todos los países', 'All countries', 'Todos os países')); ?>">
+            <?php foreach ($aba_paises as $pn): if ($pn === 'Argentina') continue; ?>
+            <option value="<?php echo esc_attr($pn); ?>"><?php echo esc_html($pn); ?></option>
+            <?php endforeach; ?>
+          </optgroup>
+        </select>
       </div>
 
       <p id="aba-datos-error" style="display:none;color:#E53E3E;font-size:12px;margin-bottom:12px;"></p>
@@ -511,5 +532,19 @@ window.abaCotizacion = <?php echo wp_json_encode([
     el.addEventListener('keyup',  checkBtn);
   });
   setInterval(checkBtn, 300);
+})();
+</script>
+<script>
+/* País del cliente → cookie aba_pais (el POST del pago está en el bundle, no recompilable). */
+(function () {
+  var sel = document.getElementById('aba-campo-pais');
+  if (!sel) return;
+  function setPais() {
+    document.cookie = 'aba_pais=' + encodeURIComponent(sel.value || '') + ';path=/;max-age=1800;SameSite=Lax';
+  }
+  setPais();
+  sel.addEventListener('change', setPais);
+  var btn = document.getElementById('aba-datos-submit');
+  if (btn) btn.addEventListener('click', setPais, true);
 })();
 </script>

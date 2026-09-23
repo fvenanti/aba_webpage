@@ -456,6 +456,38 @@ class PublicSide
     return ($hora_dev - $hora_ret) >= 4;
   }
 
+  /**
+   * Lista de países (tabla AFIP) desde CarCloud para el selector del modal.
+   * Cacheada 1 semana. Devuelve array de nombres (string). Si el API falla
+   * y no hay cache, cae a ['Argentina'] para no romper el formulario.
+   */
+  private function obtener_paises(): array
+  {
+    $cache = get_transient('aba_paises_afip');
+    if (is_array($cache) && !empty($cache)) return $cache;
+
+    $api_key = get_option('aba_reservas_api_key', '');
+    if ($api_key) {
+      $resp = wp_remote_get('https://aba.benvert.com.ar/api/paises', [
+        'headers' => ['X-API-Key' => $api_key, 'Accept' => 'application/json'],
+        'timeout' => 15,
+      ]);
+      if (!is_wp_error($resp) && wp_remote_retrieve_response_code($resp) === 200) {
+        $data    = json_decode(wp_remote_retrieve_body($resp), true);
+        $nombres = [];
+        foreach (($data['paises'] ?? []) as $p) {
+          $n = trim($p['nombre'] ?? '');
+          if ($n !== '') $nombres[] = $n;
+        }
+        if (!empty($nombres)) {
+          set_transient('aba_paises_afip', $nombres, WEEK_IN_SECONDS);
+          return $nombres;
+        }
+      }
+    }
+    return ['Argentina'];
+  }
+
   public function shortcode_cotizacion(): string
   {
     $id_autos        = intval($_GET['id_autos']        ?? 0);
@@ -491,6 +523,7 @@ class PublicSide
       'cotizacion' => $result['data'] ?? null,
       'error_code' => $result['error'] ?? null,
       'params'     => compact('id_autos', 'inicio', 'fin', 'hora_inicio', 'hora_fin', 'sucursal', 'ubicacion_raw', 'ubicacion_devolucion', 'pago_anticipado'),
+      'paises'     => $this->obtener_paises(),
     ]);
   }
 
@@ -507,6 +540,7 @@ class PublicSide
     $dni         = sanitize_text_field($_POST['dni']      ?? '');
     $email       = sanitize_email($_POST['email']         ?? '');
     $telefono    = sanitize_text_field($_POST['telefono'] ?? '');
+    $pais        = sanitize_text_field(wp_unslash($_COOKIE['aba_pais'] ?? ''));
     $payload_raw = sanitize_textarea_field(stripslashes($_POST['payload'] ?? ''));
 
     if (!$nombre || !$apellido || !$dni || !is_email($email)) {
@@ -646,6 +680,7 @@ class PublicSide
       'dni'             => $dni,
       'email'           => $email,
       'telefono'        => $telefono,
+      'pais'            => $pais,
       'monto'           => $monto,
       'payload'         => $payload,
       'pago_anticipado' => $pago_anticipado,
@@ -815,6 +850,7 @@ class PublicSide
         'apellido' => $datos['apellido'] ?? '',
         'mail'     => $datos['email'],
         'telefono' => $datos['telefono'],
+        'pais'     => $datos['pais'] ?? '',
       ],
       'reserva' => [
         'categoria'           => $payload['categoria']           ?? '',
